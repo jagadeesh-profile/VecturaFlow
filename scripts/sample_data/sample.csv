@@ -1,0 +1,18 @@
+component,type,technology,version,purpose,notes
+API,web_framework,FastAPI,0.111.0,HTTP endpoint serving,OpenAI-compatible schema
+Validation,schema,Pydantic v2,2.7.1,Request and response models,Use model_dump() not dict()
+Agent orchestration,framework,LangGraph,0.1.1,RAG pipeline graph,StateGraph with TypedDict
+LLM chains,framework,LangChain,0.2.1,LLM wrappers,Wrappers only not LCEL
+Embeddings,model,text-embedding-3-small,,Vector generation,1536 dimensions cosine metric
+Generation,model,gpt-4o-mini,,Answer generation,temperature=0 for grounded answers
+Vector DB,database,Pinecone serverless,3.2.2,Vector storage and search,Free tier us-east-1
+Ingestion queue,queue,AWS SQS,,Pipeline stage handoff,FIFO between every stage
+Registry,database,AWS DynamoDB,,Document status tracking,On-demand GSI on status+ingested_at
+Cache,cache,Redis,5.0.4,Query result caching,5 minute TTL ElastiCache in prod
+Logging,library,structlog,24.1.0,Structured JSON logging,JSON in prod console in dev
+Testing,framework,pytest+moto,8.2.0 / 5.0.6,Unit and integration tests,moto mocks all AWS services
+Deployment,platform,ECS Fargate,,Container hosting,python:3.11-slim base image
+Linting,tool,ruff,,Code quality enforcement,Configured via pyproject.toml
+File parsing,library,pdfminer.six,,PDF text extraction,Preserves page numbers
+File parsing,library,python-docx,,DOCX text extraction,Preserves section headings
+File parsing,library,pandas,,CSV processing,Per-row text blocks

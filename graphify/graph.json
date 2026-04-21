@@ -1,0 +1,1011 @@
+{
+  "version": 1,
+  "repo": "VecturaFlow",
+  "generator": "scripts/graphify.py",
+  "nodes": [
+    {
+      "id": "agent:ChunkingAgent",
+      "kind": "agent",
+      "name": "ChunkingAgent",
+      "brief": ".claude/agents/chunking-agent.md",
+      "owns": [
+        "ingestion/chunker.py",
+        "ingestion/models.py"
+      ]
+    },
+    {
+      "id": "agent:DemoAgent",
+      "kind": "agent",
+      "name": "DemoAgent",
+      "brief": ".claude/agents/demo-agent.md",
+      "owns": [
+        "scripts/demo.py"
+      ]
+    },
+    {
+      "id": "agent:EmbeddingAgent",
+      "kind": "agent",
+      "name": "EmbeddingAgent",
+      "brief": ".claude/agents/embedding-agent.md",
+      "owns": [
+        "embeddings/lambda_embed.py"
+      ]
+    },
+    {
+      "id": "agent:FileIngestionAgent",
+      "kind": "agent",
+      "name": "FileIngestionAgent",
+      "brief": ".claude/agents/file-ingestion-agent.md",
+      "owns": [
+        "ingestion/lambda_s3.py"
+      ]
+    },
+    {
+      "id": "agent:InfraDeployAgent",
+      "kind": "agent",
+      "name": "InfraDeployAgent",
+      "brief": ".claude/agents/infra-deploy-agent.md",
+      "owns": []
+    },
+    {
+      "id": "agent:ParserAgent",
+      "kind": "agent",
+      "name": "ParserAgent",
+      "brief": ".claude/agents/parser-agent.md",
+      "owns": [
+        "ingestion/parser.py"
+      ]
+    },
+    {
+      "id": "agent:QueryHandlerAgent",
+      "kind": "agent",
+      "name": "QueryHandlerAgent",
+      "brief": ".claude/agents/query-handler-agent.md",
+      "owns": [
+        "api/dependencies.py",
+        "api/main.py",
+        "api/rate_limit.py",
+        "api/schemas.py"
+      ]
+    },
+    {
+      "id": "agent:RAGAgent",
+      "kind": "agent",
+      "name": "RAGAgent",
+      "brief": ".claude/agents/r-a-g-agent.md",
+      "owns": [
+        "api/agent.py"
+      ]
+    },
+    {
+      "id": "agent:RetrieverAgent",
+      "kind": "agent",
+      "name": "RetrieverAgent",
+      "brief": ".claude/agents/retriever-agent.md",
+      "owns": [
+        "api/retriever.py"
+      ]
+    },
+    {
+      "id": "agent:TestAgent",
+      "kind": "agent",
+      "name": "TestAgent",
+      "brief": ".claude/agents/test-agent.md",
+      "owns": []
+    },
+    {
+      "id": "agent:WebhookIngestionAgent",
+      "kind": "agent",
+      "name": "WebhookIngestionAgent",
+      "brief": ".claude/agents/webhook-ingestion-agent.md",
+      "owns": [
+        "ingestion/lambda_webhook.py"
+      ]
+    },
+    {
+      "id": "api.agent",
+      "kind": "module",
+      "path": "api/agent.py",
+      "owned_by": [
+        "RAGAgent"
+      ],
+      "classes": [
+        "AgentState"
+      ],
+      "functions": [
+        "decompose_query",
+        "generate_answer",
+        "retrieve_context",
+        "run_rag",
+        "validate_answer"
+      ],
+      "external_deps": [
+        "langchain_core",
+        "langchain_openai",
+        "langgraph"
+      ]
+    },
+    {
+      "id": "api.config",
+      "kind": "module",
+      "path": "api/config.py",
+      "owned_by": [],
+      "classes": [
+        "Settings"
+      ],
+      "functions": [
+        "get_settings"
+      ],
+      "external_deps": [
+        "pydantic_settings"
+      ]
+    },
+    {
+      "id": "api.dependencies",
+      "kind": "module",
+      "path": "api/dependencies.py",
+      "owned_by": [
+        "QueryHandlerAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "get_keys_table",
+        "get_registry_table",
+        "verify_api_key"
+      ],
+      "external_deps": [
+        "boto3",
+        "fastapi"
+      ]
+    },
+    {
+      "id": "api.logger",
+      "kind": "module",
+      "path": "api/logger.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [],
+      "external_deps": [
+        "structlog"
+      ]
+    },
+    {
+      "id": "api.main",
+      "kind": "module",
+      "path": "api/main.py",
+      "owned_by": [
+        "QueryHandlerAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "chat_completions",
+        "global_exception_handler",
+        "health",
+        "healthz",
+        "lifespan",
+        "list_models",
+        "metrics",
+        "readyz",
+        "request_logging_middleware"
+      ],
+      "external_deps": [
+        "fastapi",
+        "structlog"
+      ]
+    },
+    {
+      "id": "api.observability",
+      "kind": "module",
+      "path": "api/observability.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "metrics_middleware",
+        "metrics_response"
+      ],
+      "external_deps": [
+        "fastapi",
+        "prometheus_client"
+      ]
+    },
+    {
+      "id": "api.rate_limit",
+      "kind": "module",
+      "path": "api/rate_limit.py",
+      "owned_by": [
+        "QueryHandlerAgent"
+      ],
+      "classes": [
+        "TokenBucketLimiter",
+        "_Bucket"
+      ],
+      "functions": [
+        "require_rate_limit"
+      ],
+      "external_deps": [
+        "fastapi"
+      ]
+    },
+    {
+      "id": "api.retriever",
+      "kind": "module",
+      "path": "api/retriever.py",
+      "owned_by": [
+        "RetrieverAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "retrieve"
+      ],
+      "external_deps": [
+        "openai",
+        "pinecone",
+        "redis"
+      ]
+    },
+    {
+      "id": "api.schemas",
+      "kind": "module",
+      "path": "api/schemas.py",
+      "owned_by": [
+        "QueryHandlerAgent"
+      ],
+      "classes": [
+        "ChatMessage",
+        "ChatRequest",
+        "ChatResponse",
+        "Choice",
+        "Confidence",
+        "ErrorDetail",
+        "ErrorResponse",
+        "RAGState",
+        "ResponseMessage",
+        "RetrievedChunk",
+        "Role",
+        "SourceCitation",
+        "UsageMetadata"
+      ],
+      "functions": [],
+      "external_deps": [
+        "pydantic"
+      ]
+    },
+    {
+      "id": "aws:dynamodb:keys",
+      "kind": "aws",
+      "service": "dynamodb",
+      "name": "vecturaflow-keys",
+      "notes": "PK api_key."
+    },
+    {
+      "id": "aws:dynamodb:registry",
+      "kind": "aws",
+      "service": "dynamodb",
+      "name": "vecturaflow-registry",
+      "notes": "PK doc_id; GSI status-ingested_at-index."
+    },
+    {
+      "id": "aws:s3:ingestion_bucket",
+      "kind": "aws",
+      "service": "s3",
+      "name": "INGESTION_BUCKET",
+      "notes": "Raw uploads land here; fires lambda_s3."
+    },
+    {
+      "id": "aws:sqs:embed_queue",
+      "kind": "aws",
+      "service": "sqs",
+      "name": "EMBEDDING_QUEUE_URL",
+      "notes": "Between lambda_parser and lambda_embed."
+    },
+    {
+      "id": "aws:sqs:ingest_queue",
+      "kind": "aws",
+      "service": "sqs",
+      "name": "INGESTION_QUEUE_URL",
+      "notes": "Between lambda_s3 and lambda_parser."
+    },
+    {
+      "id": "embeddings.lambda_embed",
+      "kind": "module",
+      "path": "embeddings/lambda_embed.py",
+      "owned_by": [
+        "EmbeddingAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "handler"
+      ],
+      "external_deps": [
+        "boto3",
+        "openai"
+      ]
+    },
+    {
+      "id": "ingestion.chunker",
+      "kind": "module",
+      "path": "ingestion/chunker.py",
+      "owned_by": [
+        "ChunkingAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "chunk_blocks",
+        "publish_chunks",
+        "update_registry_chunked",
+        "update_registry_empty"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore",
+        "langchain"
+      ]
+    },
+    {
+      "id": "ingestion.lambda_parser",
+      "kind": "module",
+      "path": "ingestion/lambda_parser.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "handler"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore"
+      ]
+    },
+    {
+      "id": "ingestion.lambda_s3",
+      "kind": "module",
+      "path": "ingestion/lambda_s3.py",
+      "owned_by": [
+        "FileIngestionAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "handler"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore"
+      ]
+    },
+    {
+      "id": "ingestion.lambda_webhook",
+      "kind": "module",
+      "path": "ingestion/lambda_webhook.py",
+      "owned_by": [
+        "WebhookIngestionAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "handler"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore"
+      ]
+    },
+    {
+      "id": "ingestion.logging_util",
+      "kind": "module",
+      "path": "ingestion/logging_util.py",
+      "owned_by": [],
+      "classes": [
+        "_DevFormatter",
+        "_JsonFormatter",
+        "_StructuredAdapter"
+      ],
+      "functions": [
+        "get_logger"
+      ],
+      "external_deps": []
+    },
+    {
+      "id": "ingestion.models",
+      "kind": "module",
+      "path": "ingestion/models.py",
+      "owned_by": [
+        "ChunkingAgent"
+      ],
+      "classes": [
+        "Chunk",
+        "TextBlock"
+      ],
+      "functions": [],
+      "external_deps": []
+    },
+    {
+      "id": "ingestion.parser",
+      "kind": "module",
+      "path": "ingestion/parser.py",
+      "owned_by": [
+        "ParserAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "parse_file"
+      ],
+      "external_deps": []
+    },
+    {
+      "id": "openai:embeddings",
+      "kind": "external",
+      "service": "openai",
+      "name": "text-embedding-3-small",
+      "notes": "1536-dim."
+    },
+    {
+      "id": "openai:generation",
+      "kind": "external",
+      "service": "openai",
+      "name": "gpt-4o-mini",
+      "notes": "temperature=0."
+    },
+    {
+      "id": "pinecone:index",
+      "kind": "external",
+      "service": "pinecone",
+      "name": "vecturaflow",
+      "notes": "1536-dim cosine; us-east-1."
+    },
+    {
+      "id": "redis:cache",
+      "kind": "external",
+      "service": "redis",
+      "name": "retrieval-cache",
+      "notes": "5-min TTL."
+    },
+    {
+      "id": "scripts.demo",
+      "kind": "module",
+      "path": "scripts/demo.py",
+      "owned_by": [
+        "DemoAgent"
+      ],
+      "classes": [],
+      "functions": [
+        "main",
+        "step1_upload_files",
+        "step2_wait_for_embedding",
+        "step3_run_queries"
+      ],
+      "external_deps": [
+        "boto3"
+      ]
+    },
+    {
+      "id": "scripts.graphify",
+      "kind": "module",
+      "path": "scripts/graphify.py",
+      "owned_by": [],
+      "classes": [
+        "ModuleInfo"
+      ],
+      "functions": [
+        "build_graph",
+        "card_filename",
+        "discover_modules",
+        "main",
+        "parse_module",
+        "render_card",
+        "write_if_changed"
+      ],
+      "external_deps": []
+    },
+    {
+      "id": "scripts.setup_aws",
+      "kind": "module",
+      "path": "scripts/setup_aws.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "create_api_keys_table",
+        "create_dynamodb_table",
+        "create_s3_bucket",
+        "create_sqs_queue",
+        "main"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore"
+      ]
+    },
+    {
+      "id": "scripts.setup_pinecone",
+      "kind": "module",
+      "path": "scripts/setup_pinecone.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "main",
+        "setup_pinecone_index"
+      ],
+      "external_deps": [
+        "pinecone"
+      ]
+    },
+    {
+      "id": "scripts.validate_env",
+      "kind": "module",
+      "path": "scripts/validate_env.py",
+      "owned_by": [],
+      "classes": [
+        "CheckResult",
+        "Validator"
+      ],
+      "functions": [
+        "check_aws_credentials",
+        "check_dependencies_installed",
+        "check_dotenv_file",
+        "check_dynamodb_tables",
+        "check_env_var",
+        "check_openai_connectivity",
+        "check_pinecone_connectivity",
+        "check_python_version",
+        "check_s3_bucket",
+        "check_sqs_queues",
+        "main"
+      ],
+      "external_deps": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "agent:ChunkingAgent",
+      "to": "ingestion.chunker",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:ChunkingAgent",
+      "to": "ingestion.models",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:DemoAgent",
+      "to": "scripts.demo",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:EmbeddingAgent",
+      "to": "embeddings.lambda_embed",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:FileIngestionAgent",
+      "to": "ingestion.lambda_s3",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:ParserAgent",
+      "to": "ingestion.parser",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:QueryHandlerAgent",
+      "to": "api.dependencies",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:QueryHandlerAgent",
+      "to": "api.main",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:QueryHandlerAgent",
+      "to": "api.rate_limit",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:QueryHandlerAgent",
+      "to": "api.schemas",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:RAGAgent",
+      "to": "api.agent",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:RetrieverAgent",
+      "to": "api.retriever",
+      "kind": "owns"
+    },
+    {
+      "from": "agent:WebhookIngestionAgent",
+      "to": "ingestion.lambda_webhook",
+      "kind": "owns"
+    },
+    {
+      "from": "api.agent",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.agent",
+      "to": "api.logger",
+      "kind": "imports"
+    },
+    {
+      "from": "api.agent",
+      "to": "api.retriever",
+      "kind": "imports"
+    },
+    {
+      "from": "api.agent",
+      "to": "api.schemas",
+      "kind": "imports"
+    },
+    {
+      "from": "api.agent",
+      "to": "ext:langchain_core",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.agent",
+      "to": "ext:langchain_openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.agent",
+      "to": "ext:langgraph",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.agent",
+      "to": "openai:generation",
+      "kind": "calls"
+    },
+    {
+      "from": "api.config",
+      "to": "ext:pydantic_settings",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "api.logger",
+      "kind": "imports"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "api.schemas",
+      "kind": "imports"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "aws:dynamodb:keys",
+      "kind": "reads"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.dependencies",
+      "to": "ext:fastapi",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.logger",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.logger",
+      "to": "ext:structlog",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.main",
+      "to": "api.agent",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.dependencies",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.logger",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.observability",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.rate_limit",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "api.schemas",
+      "kind": "imports"
+    },
+    {
+      "from": "api.main",
+      "to": "ext:fastapi",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.main",
+      "to": "ext:structlog",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.observability",
+      "to": "ext:fastapi",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.observability",
+      "to": "ext:prometheus_client",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.rate_limit",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.rate_limit",
+      "to": "api.dependencies",
+      "kind": "imports"
+    },
+    {
+      "from": "api.rate_limit",
+      "to": "api.logger",
+      "kind": "imports"
+    },
+    {
+      "from": "api.rate_limit",
+      "to": "api.schemas",
+      "kind": "imports"
+    },
+    {
+      "from": "api.rate_limit",
+      "to": "ext:fastapi",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.retriever",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "api.retriever",
+      "to": "api.logger",
+      "kind": "imports"
+    },
+    {
+      "from": "api.retriever",
+      "to": "api.schemas",
+      "kind": "imports"
+    },
+    {
+      "from": "api.retriever",
+      "to": "ext:openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.retriever",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.retriever",
+      "to": "ext:redis",
+      "kind": "depends_on"
+    },
+    {
+      "from": "api.retriever",
+      "to": "openai:embeddings",
+      "kind": "calls"
+    },
+    {
+      "from": "api.retriever",
+      "to": "pinecone:index",
+      "kind": "reads"
+    },
+    {
+      "from": "api.retriever",
+      "to": "redis:cache",
+      "kind": "reads_writes"
+    },
+    {
+      "from": "api.schemas",
+      "to": "ext:pydantic",
+      "kind": "depends_on"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "aws:dynamodb:registry",
+      "kind": "writes"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "aws:sqs:embed_queue",
+      "kind": "consumes_from"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "ext:openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "ingestion.logging_util",
+      "kind": "imports"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "openai:embeddings",
+      "kind": "calls"
+    },
+    {
+      "from": "embeddings.lambda_embed",
+      "to": "pinecone:index",
+      "kind": "writes"
+    },
+    {
+      "from": "ingestion.chunker",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.chunker",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.chunker",
+      "to": "ext:langchain",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.chunker",
+      "to": "ingestion.logging_util",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.chunker",
+      "to": "ingestion.models",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "aws:dynamodb:registry",
+      "kind": "writes"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "aws:sqs:embed_queue",
+      "kind": "publishes_to"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "aws:sqs:ingest_queue",
+      "kind": "consumes_from"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "ingestion.chunker",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "ingestion.logging_util",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.lambda_parser",
+      "to": "ingestion.parser",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.lambda_s3",
+      "to": "aws:dynamodb:registry",
+      "kind": "writes"
+    },
+    {
+      "from": "ingestion.lambda_s3",
+      "to": "aws:sqs:ingest_queue",
+      "kind": "publishes_to"
+    },
+    {
+      "from": "ingestion.lambda_s3",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_s3",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_s3",
+      "to": "ingestion.logging_util",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.lambda_webhook",
+      "to": "aws:dynamodb:registry",
+      "kind": "writes"
+    },
+    {
+      "from": "ingestion.lambda_webhook",
+      "to": "aws:sqs:ingest_queue",
+      "kind": "publishes_to"
+    },
+    {
+      "from": "ingestion.lambda_webhook",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_webhook",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "ingestion.lambda_webhook",
+      "to": "ingestion.logging_util",
+      "kind": "imports"
+    },
+    {
+      "from": "ingestion.parser",
+      "to": "ingestion.models",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.demo",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.setup_aws",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.setup_aws",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.setup_pinecone",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    }
+  ]
+}

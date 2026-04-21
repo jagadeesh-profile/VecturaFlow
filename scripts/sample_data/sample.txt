@@ -1,0 +1,83 @@
+VecturaFlow Technical Overview
+================================
+
+VecturaFlow is an autonomous agentic RAG (Retrieval-Augmented Generation) data
+platform built on AWS. It ingests data from any source — S3 files, HTTP webhooks,
+or real-time Kinesis streams — and makes that data instantly queryable through an
+OpenAI-compatible API.
+
+Architecture
+------------
+The platform is composed of three core layers:
+
+1. Ingestion Layer
+   Files uploaded to S3 trigger a Lambda function (FileIngestionAgent) that detects
+   the file type, computes a SHA256 doc_id for deduplication, and pushes a parse
+   job to an SQS queue. A second Lambda (ParserAgent + ChunkingAgent) downloads the
+   file, extracts text blocks using document-type-specific parsers (PDF via
+   pdfminer, DOCX via python-docx, CSV via pandas), and splits each block into
+   512-character chunks with 50-character overlap. Each chunk preserves its page
+   number and section heading for accurate source citations.
+
+2. Embedding Layer
+   The EmbeddingAgent Lambda consumes chunks from a second SQS queue, batches up
+   to 10 chunks into a single OpenAI text-embedding-3-small API call, and upserts
+   the resulting 1536-dimensional vectors into Pinecone with full metadata. The
+   DynamoDB registry is updated to status="embedded" after successful upsert. On
+   Pinecone failure, failed chunks are written to S3 for later reprocessing.
+
+3. Retrieval and Generation Layer
+   The RetrieverAgent embeds the user query using the same text-embedding-3-small
+   model and searches Pinecone for the top-5 most similar chunks. Results are
+   cached in Redis for 5 minutes to reduce cost and latency on repeated queries.
+   The LangGraph RAGAgent orchestrates a 4-node pipeline: decompose_query splits
+   complex multi-part questions, retrieve_context fetches chunks for each
+   sub-query and deduplicates them, generate_answer builds a grounded prompt and
+   calls GPT-4o mini, and validate_answer checks the response is supported by
+   the retrieved context.
+
+Key Technical Decisions
+-----------------------
+- Embeddings: OpenAI text-embedding-3-small (1536 dimensions, cosine metric)
+- Generation: GPT-4o mini at temperature=0 for deterministic, grounded answers
+- Vector store: Pinecone serverless on AWS us-east-1 (free tier, up to 1M vectors)
+- Queue: AWS SQS FIFO between every pipeline stage for reliability
+- Registry: DynamoDB on-demand with GSI on status+ingested_at for status queries
+- Cache: Redis (ElastiCache in prod, localhost in dev) with 5-minute TTL
+- Chunk size: 512 characters, 50-character overlap for context continuity
+- API: OpenAI-compatible /v1/chat/completions for drop-in compatibility
+
+Performance Characteristics
+----------------------------
+- Ingestion latency: file upload to vectors indexed in under 60 seconds
+- Query latency: P95 under 3 seconds including embedding + retrieval + generation
+- Throughput: Lambda auto-scales to handle bursts up to 1000 concurrent requests
+- Cost: text-embedding-3-small at $0.02 per million tokens; GPT-4o mini at
+  $0.15 per million input tokens — approximately $0.001 per query at typical usage
+
+Security and Reliability
+------------------------
+- API authentication via DynamoDB-backed API key validation
+- All Lambda handlers implement partial batch failure (batchItemFailures)
+- Per-record error handling: one bad message never fails the entire SQS batch
+- Exponential backoff on OpenAI rate limits (max 5 retries)
+- S3 fallback for chunks that fail Pinecone upsert after 3 retries
+- Structured JSON logging via structlog for CloudWatch integration
+- CloudWatch custom metrics on every pipeline stage for alerting
+
+Supported File Types
+--------------------
+The parser handles: PDF, DOCX, CSV, TXT, and JSON files.
+PDF pages are extracted with pdfminer.six preserving page numbers.
+DOCX documents preserve section headings from heading styles.
+CSV files process each row independently with column names as context.
+JSON files handle both arrays of objects and nested key-value structures.
+
+Demo and Deployment
+-------------------
+VecturaFlow is deployed on ECS Fargate behind API Gateway for the query API,
+and uses AWS Lambda for all pipeline stages. The full system can be provisioned
+in under 5 minutes using the included setup scripts (setup_aws.py and
+setup_pinecone.py). A demo script (scripts/demo.py) uploads sample files,
+waits for ingestion to complete, and runs three test queries to validate the
+end-to-end pipeline in approximately 90 seconds.

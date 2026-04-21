@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Secrets — NEVER commit these
+# ─────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Terraform — state files contain resource IDs, ARNs, and the self-signed TLS
+# private key for the ALB. Never commit.
+# ─────────────────────────────────────────────────────────────────────────────
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.example.tfvars
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Claude Code / agent tooling — the worktree dir lives here and belongs to a
+# separate repo (home-level HF Marketing). Excluding prevents cross-repo noise.
+# ─────────────────────────────────────────────────────────────────────────────
+.claude/
+.agent/
+.agents/
+.antigravity/
+.cagent/
+.codeium/
+.copilot/
+.continuum/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.egg
+.installed.cfg
+wheelhouse/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Virtual environments
+# ─────────────────────────────────────────────────────────────────────────────
+venv/
+.venv/
+.venv*/
+env/
+ENV/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Testing / linting caches
+# ─────────────────────────────────────────────────────────────────────────────
+.pytest_cache/
+pytest-cache-files-*/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AWS Lambda zips / packaging artifacts
+# ─────────────────────────────────────────────────────────────────────────────
+*.zip
+lambda_packages/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IDE / editor / OS
+# ─────────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Logs + runtime droppings
+# ─────────────────────────────────────────────────────────────────────────────
+*.log
+logs/
+*.bak
+*.backup
+*.tmp
+*.pid
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Accidental shell artifacts (unexpanded brace expressions, etc.)
+# ─────────────────────────────────────────────────────────────────────────────
+{api,ingestion,embeddings,infra,tests,scripts}
