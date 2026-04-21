@@ -70,6 +70,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build wheelhouse
+        # The Dockerfile uses --no-index --find-links=/build/wheelhouse for
+        # reproducible offline container builds. wheelhouse/ is git-ignored,
+        # so CI has to regenerate it from requirements.runtime.txt first.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel -r requirements.runtime.txt -w wheelhouse/
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Build image
