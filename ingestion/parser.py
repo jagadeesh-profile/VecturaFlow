@@ -57,9 +57,7 @@ def _is_meaningful(text: str, min_chars: int = 10) -> bool:
     if len(cleaned) < min_chars:
         return False
     # Skip pure numeric strings (likely page numbers)
-    if cleaned.isdigit():
-        return False
-    return True
+    return not cleaned.isdigit()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -247,7 +245,7 @@ def _parse_txt(file_bytes: bytes, doc_id: str, source: str) -> list[TextBlock]:
                 raw = file_bytes.decode("latin-1", errors="replace")
 
     paragraphs = re.split(r"\n\s*\n", raw)
-    for i, para in enumerate(paragraphs):
+    for _i, para in enumerate(paragraphs):
         text = _clean_text(para)
         if _is_meaningful(text):
             blocks.append(TextBlock(

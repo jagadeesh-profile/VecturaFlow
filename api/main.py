@@ -4,11 +4,13 @@ OpenAI-compatible RAG API deployed on ECS Fargate behind API Gateway.
 """
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 import time
+from typing import Any
 import uuid
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
@@ -40,7 +42,7 @@ from api.schemas import (
 # ─────────────────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info(
         "vecturaflow.startup",
         env=settings.api_env,
@@ -81,7 +83,10 @@ app.middleware("http")(metrics_middleware)
 
 
 @app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
+async def request_logging_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
     """Log every request with method, path, status, and latency."""
     request_id = str(uuid.uuid4())
     structlog.contextvars.bind_contextvars(request_id=request_id)
@@ -109,7 +114,7 @@ async def request_logging_middleware(request: Request, call_next):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("unhandled_exception", path=request.url.path, error=str(exc), exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -128,7 +133,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/health", tags=["ops"], summary="Liveness probe")
-async def health():
+async def health() -> dict[str, Any]:
     """ECS liveness probe — returns 200 as long as the process is running."""
     return {
         "status": "ok",
@@ -138,12 +143,12 @@ async def health():
 
 
 @app.get("/healthz", tags=["ops"], summary="Liveness probe (k8s alias)")
-async def healthz():
+async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.get("/readyz", tags=["ops"], summary="Readiness probe")
-async def readyz():
+async def readyz() -> JSONResponse:
     """
     Readiness probe. Returns 200 only when the service has all the config
     it needs to serve requests. This is a cheap sync check — no external
@@ -165,12 +170,12 @@ async def readyz():
 
 
 @app.get("/metrics", tags=["ops"], summary="Prometheus metrics", include_in_schema=False)
-async def metrics():
+async def metrics() -> Response:
     return metrics_response()
 
 
 @app.get("/v1/models", tags=["models"], summary="List available models")
-async def list_models(_: dict = Depends(verify_api_key)):
+async def list_models(_: dict = Depends(verify_api_key)) -> dict[str, Any]:
     """OpenAI-compatible models endpoint."""
     return {
         "object": "list",
@@ -199,7 +204,7 @@ async def list_models(_: dict = Depends(verify_api_key)):
 async def chat_completions(
     request: ChatRequest,
     key_info: dict = Depends(require_rate_limit),
-):
+) -> ChatResponse:
     """
     Main RAG endpoint. Accepts an OpenAI-compatible messages array,
     retrieves relevant context from Pinecone via LangGraph RAGAgent,

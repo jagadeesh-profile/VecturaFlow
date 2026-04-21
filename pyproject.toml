@@ -56,8 +56,6 @@ select = [
     "SIM",  # flake8-simplify
 ]
 ignore = [
-    "ANN101",   # missing type annotation for self
-    "ANN102",   # missing type annotation for cls
     "ANN401",   # dynamically typed expressions (Any) — needed for boto3
     "B008",     # do not perform function calls in default arguments (FastAPI Depends)
     "E501",     # line too long — ruff formatter handles this

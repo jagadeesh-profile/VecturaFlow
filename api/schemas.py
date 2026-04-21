@@ -4,7 +4,7 @@ OpenAI-compatible request/response models + internal types.
 """
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 import time
 from typing import Any, Literal
 import uuid
@@ -15,13 +15,13 @@ from pydantic import BaseModel, Field, field_validator
 # Enums
 # ─────────────────────────────────────────────────────────────────────────────
 
-class Role(str, Enum):
+class Role(StrEnum):
     system = "system"
     user = "user"
     assistant = "assistant"
 
 
-class Confidence(str, Enum):
+class Confidence(StrEnum):
     high = "high"
     low = "low"
     no_context = "no_context"

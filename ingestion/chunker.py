@@ -17,6 +17,7 @@ from functools import lru_cache
 import json
 import os
 import time
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -33,12 +34,12 @@ def _region() -> str:
 
 
 @lru_cache(maxsize=1)
-def _sqs():
+def _sqs() -> Any:
     return boto3.client("sqs", region_name=_region())
 
 
 @lru_cache(maxsize=1)
-def _dynamo():
+def _dynamo() -> Any:
     return boto3.resource("dynamodb", region_name=_region())
 
 

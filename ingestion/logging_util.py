@@ -29,7 +29,7 @@ _DEV_MODE = os.environ.get("API_DEBUG", "false").lower() in {"1", "true", "yes"}
 class _StructuredAdapter(logging.LoggerAdapter):
     """Accepts arbitrary keyword context and renders it structurally."""
 
-    def process(self, msg: str, kwargs: dict[str, Any]):  # type: ignore[override]
+    def process(self, msg: str, kwargs: dict[str, Any]) -> tuple[str, dict[str, Any]]:  # type: ignore[override]
         extra = kwargs.pop("extra", {}) or {}
         # structlog-style: every kwarg that isn't a std logging kwarg becomes context
         reserved = {"exc_info", "stack_info", "stacklevel"}

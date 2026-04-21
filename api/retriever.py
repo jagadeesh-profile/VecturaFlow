@@ -58,7 +58,7 @@ def _openai_client() -> OpenAI:
 
 
 @lru_cache(maxsize=1)
-def _pinecone_index():
+def _pinecone_index() -> Any:
     pc = Pinecone(api_key=settings.pinecone_api_key)
     return pc.Index(settings.pinecone_index)
 
@@ -139,7 +139,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
     dot = 0.0
     na = 0.0
     nb = 0.0
-    for x, y in zip(a, b):
+    for x, y in zip(a, b, strict=False):
         dot += x * y
         na += x * x
         nb += y * y
@@ -176,7 +176,7 @@ def _mmr_rerank(
 
     selected: list[Any] = []
     selected_vecs: list[list[float]] = []
-    remaining = list(zip(candidates, vecs))
+    remaining = list(zip(candidates, vecs, strict=False))
 
     # Pre-compute query similarity (== match.score when the index is cosine,
     # but we recompute to keep this function self-contained and correct even
@@ -188,10 +188,11 @@ def _mmr_rerank(
         best_score = float("-inf")
         for i, (cand, cand_vec) in enumerate(remaining):
             relevance = query_sims[id(cand)]
-            if selected_vecs:
-                diversity = max(_cosine(cand_vec, sv) for sv in selected_vecs)
-            else:
-                diversity = 0.0
+            diversity = (
+                max(_cosine(cand_vec, sv) for sv in selected_vecs)
+                if selected_vecs
+                else 0.0
+            )
             mmr = lambda_ * relevance - (1 - lambda_) * diversity
             if mmr > best_score:
                 best_score = mmr

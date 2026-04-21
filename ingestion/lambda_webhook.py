@@ -39,21 +39,21 @@ def _region() -> str:
 
 
 @lru_cache(maxsize=1)
-def _dynamo():
+def _dynamo() -> Any:
     return boto3.resource("dynamodb", region_name=_region())
 
 
 @lru_cache(maxsize=1)
-def _sqs():
+def _sqs() -> Any:
     return boto3.client("sqs", region_name=_region())
 
 
 @lru_cache(maxsize=1)
-def _cw():
+def _cw() -> Any:
     return boto3.client("cloudwatch", region_name=_region())
 
 
-def _registry():
+def _registry() -> Any:
     return _dynamo().Table(os.environ.get("REGISTRY_TABLE", "vecturaflow-registry"))
 
 

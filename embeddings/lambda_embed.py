@@ -47,28 +47,28 @@ def _openai_client() -> OpenAI:
 
 
 @lru_cache(maxsize=1)
-def _pinecone_index():
+def _pinecone_index() -> Any:
     pinecone = importlib.import_module("pinecone")
     pc = pinecone.Pinecone(api_key=os.environ["PINECONE_API_KEY"])
     return pc.Index(os.environ["PINECONE_INDEX"])
 
 
 @lru_cache(maxsize=1)
-def _dynamo():
+def _dynamo() -> Any:
     return boto3.resource("dynamodb", region_name=_region())
 
 
-def _registry():
+def _registry() -> Any:
     return _dynamo().Table(os.environ.get("REGISTRY_TABLE", "vecturaflow-registry"))
 
 
 @lru_cache(maxsize=1)
-def _s3():
+def _s3() -> Any:
     return boto3.client("s3", region_name=_region())
 
 
 @lru_cache(maxsize=1)
-def _cw():
+def _cw() -> Any:
     return boto3.client("cloudwatch", region_name=_region())
 
 

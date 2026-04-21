@@ -40,12 +40,12 @@ def _region() -> str:
 
 
 @lru_cache(maxsize=1)
-def _s3_client():
+def _s3_client() -> Any:
     return boto3.client("s3", region_name=_region())
 
 
 @lru_cache(maxsize=1)
-def _dynamo_resource():
+def _dynamo_resource() -> Any:
     return boto3.resource("dynamodb", region_name=_region())
 
 

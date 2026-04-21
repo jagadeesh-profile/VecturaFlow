@@ -6,6 +6,7 @@ Inject via Depends() — never instantiate clients inside route handlers.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Any
 
 import boto3
 from fastapi import Depends, Header, HTTPException, status
@@ -19,15 +20,15 @@ from api.schemas import ErrorDetail
 # ─────────────────────────────────────────────────────────────────────────────
 
 @lru_cache(maxsize=1)
-def _get_dynamodb_resource():
+def _get_dynamodb_resource() -> Any:
     return boto3.resource("dynamodb", region_name=get_settings().aws_default_region)
 
 
-def get_registry_table():
+def get_registry_table() -> Any:
     return _get_dynamodb_resource().Table(get_settings().registry_table)
 
 
-def get_keys_table():
+def get_keys_table() -> Any:
     return _get_dynamodb_resource().Table(get_settings().keys_table)
 
 
@@ -38,7 +39,7 @@ def get_keys_table():
 async def verify_api_key(
     authorization: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
-) -> dict:
+) -> dict[str, Any]:
     """
     Validates Bearer token against DynamoDB keys table.
     Returns the key record (includes key_id, created_at, owner).
