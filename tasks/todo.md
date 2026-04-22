@@ -46,6 +46,7 @@ changes). The LangGraph StateGraph in `api/agent.py` needs audit.
 - [ ] Migrate off root AWS user → dedicated IAM user with MFA
 - [ ] Move Terraform state from local `.tfstate` to S3+DynamoDB backend
 - [ ] Deploy missing ingestion Lambdas (Path B from session 2026-04-21)
+   - Parser now accepts raw S3 notifications, but the updated Lambda image still has to be pushed and the AWS function updated.
 - [ ] Rotate the two API keys that were displayed in chat history
 - [ ] Add CloudWatch alarms for: 5xx rate, p95 latency, DLQ depth, SQS age
 - [ ] Remove double-logging in `api/observability.py`

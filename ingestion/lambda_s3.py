@@ -47,7 +47,7 @@ logger = get_logger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _region() -> str:
-    return os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+    return os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
 
 @lru_cache(maxsize=1)
@@ -202,6 +202,22 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     notification invoker) has a structured summary for observability.
     """
     records = event.get("Records", [])
+
+    # ── Unwrap SQS-wrapped S3 events ─────────────────────────────────────────
+    # Production wiring is S3 → SQS → Lambda, so each SQS record's `body`
+    # contains the real S3 event JSON. Flatten to S3 records so the downstream
+    # loop stays simple. Direct S3 invocations (unit tests) are also supported.
+    if records and "body" in records[0] and "s3" not in records[0]:
+        flattened: list[dict[str, Any]] = []
+        for sqs_rec in records:
+            try:
+                inner = json.loads(sqs_rec["body"])
+            except (ValueError, KeyError) as exc:
+                logger.error("ingestion.sqs_body_parse_failed", error=str(exc))
+                continue
+            flattened.extend(inner.get("Records", []))
+        records = flattened
+
     results: dict[str, int] = {"processed": 0, "skipped": 0, "failed": 0}
 
     for record in records:

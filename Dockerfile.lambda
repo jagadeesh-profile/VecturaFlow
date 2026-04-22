@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1.7
+# ─────────────────────────────────────────────────────────────────────────────
+# VecturaFlow — Lambda container image.
+#
+# One image, three handlers. Selected per function via `image_config.command`
+# in Terraform:
+#   - ingestion.lambda_s3.handler       (S3 → ingestion SQS)
+#   - ingestion.lambda_parser.handler   (ingestion SQS → embedding SQS)
+#   - embeddings.lambda_embed.handler   (embedding SQS → Pinecone)
+#
+# Base: AWS public Lambda Python 3.11 runtime — already sets
+# LAMBDA_TASK_ROOT=/var/task and includes the Lambda Runtime Interface Client,
+# so the image runs unchanged in Lambda and can also be exercised locally via
+# `docker run --entrypoint /usr/local/bin/aws-lambda-rie`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# Speed up pip + reproducibility
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=180
+
+# Install runtime deps into the Lambda task root so imports resolve without
+# PYTHONPATH gymnastics.
+COPY requirements.lambda.txt ${LAMBDA_TASK_ROOT}/
+RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.lambda.txt --target ${LAMBDA_TASK_ROOT}
+
+# Application source. Each module is imported via its fully-qualified path
+# (e.g. `ingestion.lambda_s3.handler`) so the Lambda command must be set to
+# the dotted handler, not a filename.
+COPY ingestion/   ${LAMBDA_TASK_ROOT}/ingestion/
+COPY embeddings/  ${LAMBDA_TASK_ROOT}/embeddings/
+
+# Default command — overridden per function by image_config.command in Terraform.
+CMD ["ingestion.lambda_s3.handler"]

@@ -14,6 +14,7 @@ Flow:
 """
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from functools import lru_cache
 import json
@@ -34,9 +35,11 @@ from ingestion.parser import parse_file
 
 logger = get_logger(__name__)
 
+SUPPORTED_TYPES: frozenset[str] = frozenset({"pdf", "docx", "csv", "txt", "json"})
+
 
 def _region() -> str:
-    return os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+    return os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
 
 @lru_cache(maxsize=1)
@@ -55,6 +58,17 @@ def _embedding_queue_url() -> str:
 
 def _registry_table_name() -> str:
     return os.environ.get("REGISTRY_TABLE", "vecturaflow-registry")
+
+
+def _make_doc_id(bucket: str, key: str) -> str:
+    return hashlib.sha256(f"{bucket}/{key}".encode()).hexdigest()
+
+
+def _get_file_type(key: str) -> str | None:
+    parts = key.rsplit(".", 1)
+    if len(parts) < 2:
+        return None
+    return parts[1].lower()
 
 
 def _chunk_size() -> int:
@@ -101,19 +115,90 @@ def _update_registry_failed(doc_id: str, error: str) -> None:
         logger.error("dynamo.update_failed", doc_id=doc_id, error=str(exc))
 
 
+def _write_registry_started(doc_id: str, bucket: str, key: str, file_type: str) -> None:
+    """Best-effort registry write so raw S3 notifications behave like lambda_s3."""
+    try:
+        table = _dynamo_resource().Table(_registry_table_name())
+        now = datetime.now(timezone.utc).isoformat()
+        table.put_item(
+            Item={
+                "doc_id": doc_id,
+                "source": key,
+                "file_type": file_type,
+                "status": "ingestion_started",
+                "ingested_at": now,
+                "updated_at": now,
+            },
+            ConditionExpression="attribute_not_exists(doc_id) OR #s <> :completed",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={":completed": "completed"},
+        )
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            logger.error("dynamo.write_failed", doc_id=doc_id, error=str(exc))
+
+
+def _normalize_message(message_body: dict[str, Any]) -> dict[str, Any] | None:
+    """
+    Accept either the existing doc-metadata payload or a raw S3 notification.
+    Raw S3 notifications are converted into the same shape lambda_s3 emits.
+    """
+    bucket = message_body.get("bucket")
+    key = message_body.get("key")
+    file_type = message_body.get("file_type")
+    doc_id = message_body.get("doc_id")
+
+    if bucket and key:
+        inferred_type = file_type or _get_file_type(key)
+        if not inferred_type:
+            return None
+        return {
+            "doc_id": doc_id or _make_doc_id(bucket, key),
+            "bucket": bucket,
+            "key": key,
+            "file_type": inferred_type,
+        }
+
+    records = message_body.get("Records")
+    if not isinstance(records, list) or not records:
+        return None
+
+    first = records[0]
+    if not isinstance(first, dict) or "s3" not in first:
+        return None
+
+    s3 = first["s3"]
+    bucket = s3["bucket"]["name"]
+    key = s3["object"]["key"].replace("+", " ")
+    file_type = _get_file_type(key)
+    if file_type not in SUPPORTED_TYPES:
+        return None
+
+    return {
+        "doc_id": _make_doc_id(bucket, key),
+        "bucket": bucket,
+        "key": key,
+        "file_type": file_type,
+    }
+
+
 def _process_record(message_body: dict[str, Any]) -> dict[str, str]:
     """
     Process one SQS message.
     Returns {"doc_id": ..., "status": "chunked" | "empty" | "failed"}.
     """
     doc_id = message_body.get("doc_id", "unknown")
-    bucket = message_body.get("bucket")
-    key = message_body.get("key")
-    file_type = message_body.get("file_type")
-
-    if not all([bucket, key, file_type]):
+    normalized = _normalize_message(message_body)
+    if not normalized:
         logger.error("parser.invalid_message", doc_id=doc_id, body=message_body)
         return {"doc_id": doc_id, "status": "failed"}
+
+    doc_id = normalized["doc_id"]
+    bucket = normalized["bucket"]
+    key = normalized["key"]
+    file_type = normalized["file_type"]
+
+    _write_registry_started(doc_id, bucket, key, file_type)
 
     logger.info("parser.processing", doc_id=doc_id, file_type=file_type, key=key)
 

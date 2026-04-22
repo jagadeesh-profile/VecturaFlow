@@ -35,7 +35,7 @@ logger = get_logger(__name__)
 
 
 def _region() -> str:
-    return os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+    return os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
 
 @lru_cache(maxsize=1)

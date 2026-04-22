@@ -153,6 +153,47 @@ make test-all      # full suite (102 tests)
 make lint          # ruff
 ```
 
+## Health Check
+
+Run the full pipeline verification with one command:
+
+```bash
+make check-all
+```
+
+This runs, in order: `preflight` → `pinecone-stats` → `verify`.
+
+### First-run checklist
+
+| Step | Expected | If it fails |
+|------|----------|-------------|
+| `make preflight` | Masked key prints, OpenAI returns `ok` | `OPENAI_API_KEY` missing, placeholder, or invalid — check `.env` and shell cache |
+| `make pinecone-stats` | `total_vector_count > 0`, correct index name | Ingestion ran but vectors didn't land — check Pinecone index name and environment vars |
+| `make verify` (in-corpus Q) | Matches with score > 0.75, answer contains PDF specifics | Embedding model mismatch between ingestion and query, or index incomplete |
+| `make verify` (out-of-corpus Q) | Answer: "Not found in the provided documents" | Prompt construction issue — model is answering from weights, not context |
+
+### Common causes when `check-all` fails at pinecone-stats or verify
+
+- Wrong Pinecone index name in config
+- Stale environment variables (shell or Lambda)
+- Deployment still pointing at an old Lambda image
+- Embedding model changed between ingest time and query time (dimension mismatch)
+
+### Individual commands
+
+- `make preflight` — validate OpenAI key only
+- `make pinecone-stats` — inspect vector index
+- `make verify` — default 3-question RAG test
+- `make verify-q Q="your question"` — ask a custom question
+- `make triage` — dry-run queue triage
+- `make triage-apply` — apply drain/reprocess/DLQ decisions
+
+If any step fails, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for failure patterns and fixes per step.
+
+## Operations
+
+See [docs/RUN_LOG.md](docs/RUN_LOG.md) for the canonical build, verify, queue triage, and calibration command sequence.
+
 ### Deploy to AWS
 
 ```bash

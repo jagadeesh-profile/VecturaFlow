@@ -413,3 +413,54 @@ def test_lambda_parser_handles_invalid_message():
     result = lp.handler(event, None)
     # Should not raise — handled gracefully
     assert "batchItemFailures" in result
+
+
+@mock_aws
+def test_lambda_parser_processes_raw_s3_notification():
+    import importlib
+
+    import boto3
+
+    region = "us-east-1"
+
+    s3 = boto3.client("s3", region_name=region)
+    s3.create_bucket(Bucket="test-ingestion")
+
+    dynamo = boto3.resource("dynamodb", region_name=region)
+    dynamo.create_table(
+        TableName="vecturaflow-registry-test",
+        KeySchema=[{"AttributeName": "doc_id", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "doc_id", "AttributeType": "S"}],
+        BillingMode="PAY_PER_REQUEST",
+    )
+
+    sqs = boto3.client("sqs", region_name=region)
+    queue = sqs.create_queue(QueueName="vecturaflow-embedding-raw")
+    os.environ["EMBEDDING_QUEUE_URL"] = queue["QueueUrl"]
+
+    csv_bytes = make_csv_bytes([
+        {"name": "Alice", "role": "Engineer", "dept": "AI"},
+        {"name": "Bob", "role": "Manager", "dept": "Product"},
+    ])
+    s3.put_object(Bucket="test-ingestion", Key="incoming/team.csv", Body=csv_bytes)
+
+    import ingestion.lambda_parser as lp
+    importlib.reload(lp)
+
+    event = {
+        "Records": [{
+            "messageId": "s3-msg-001",
+            "body": json.dumps({
+                "Records": [{
+                    "eventSource": "aws:s3",
+                    "s3": {
+                        "bucket": {"name": "test-ingestion"},
+                        "object": {"key": "incoming/team.csv"},
+                    },
+                }]
+            }),
+        }]
+    }
+
+    result = lp.handler(event, None)
+    assert result["batchItemFailures"] == []
