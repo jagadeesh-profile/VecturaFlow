@@ -275,7 +275,7 @@
       "kind": "aws",
       "service": "dynamodb",
       "name": "vecturaflow-keys",
-      "notes": "PK api_key."
+      "notes": "PK api_key_hash."
     },
     {
       "id": "aws:dynamodb:registry",

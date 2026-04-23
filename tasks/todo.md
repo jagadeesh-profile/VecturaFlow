@@ -41,16 +41,18 @@ changes). The LangGraph StateGraph in `api/agent.py` needs audit.
 
 ### Other flagged issues (from earlier review)
 
-- [ ] Replace self-signed ALB cert with ACM-managed cert
-- [ ] Hash API keys in DynamoDB (currently stored plaintext in `keys` table)
+- [x] Replace self-signed ALB cert with ACM-managed cert
+- [x] Hash API keys in DynamoDB (currently stored plaintext in `keys` table)
 - [ ] Migrate off root AWS user → dedicated IAM user with MFA
 - [ ] Move Terraform state from local `.tfstate` to S3+DynamoDB backend
+   - Backend config is now committed; run `terraform init -migrate-state`
+     against the real state bucket/lock table to complete the migration.
 - [ ] Deploy missing ingestion Lambdas (Path B from session 2026-04-21)
    - Parser now accepts raw S3 notifications, but the updated Lambda image still has to be pushed and the AWS function updated.
 - [ ] Rotate the two API keys that were displayed in chat history
-- [ ] Add CloudWatch alarms for: 5xx rate, p95 latency, DLQ depth, SQS age
+- [x] Add CloudWatch alarms for: 5xx rate, p95 latency, DLQ depth, SQS age
 - [ ] Remove double-logging in `api/observability.py`
 - [ ] Narrow ECS task egress SG from `0.0.0.0/0` → VPC endpoints only
-- [ ] Drop unused `dynamodb:Scan` from task role (we only Query via GSI)
-- [ ] Harden dev bypass: require env `API_ENV=development` *and* explicit
+- [x] Drop unused `dynamodb:Scan` from task role (we only Query via GSI)
+- [x] Harden dev bypass: require env `API_ENV=development` *and* explicit
       `API_DEV_BYPASS=true` before accepting literal key `"dev"`

@@ -128,20 +128,19 @@ Ordered by impact:
 
 ```python
 import boto3
+import hashlib
+
+api_key = "vf_" + "<random 32 hex>"
 table = boto3.resource("dynamodb").Table("vecturaflow-keys")
 table.put_item(Item={
-    "api_key": "vf_" + "<random 32 hex>",
-    "key_id":  "acme-prod-001",
-    "owner":   "ops@acme.example",
+    "api_key_hash": hashlib.sha256(api_key.encode("utf-8")).hexdigest(),
+    "key_id": "acme-prod-001",
+    "owner": "ops@acme.example",
     "revoked": False,
 })
 ```
 
 Revoke by setting `revoked=True`; the next request will 401 with code `revoked_key`.
-
-> **Known limitation:** keys are stored as plaintext PKs. A hardening ticket replaces the
-> PK with `sha256(api_key)` and looks up via a hash of the presented bearer token. Until
-> then, access to the keys table is IAM-restricted to the API task role and the operator.
 
 ---
 
@@ -173,7 +172,8 @@ Tail logs:
 docker-compose logs -f api
 ```
 
-Hit the API with the dev key:
+Hit the API with the dev key. This works only when `API_ENV=development` and
+`API_DEV_BYPASS=true`:
 
 ```bash
 curl -sX POST http://localhost:8000/v1/chat/completions \

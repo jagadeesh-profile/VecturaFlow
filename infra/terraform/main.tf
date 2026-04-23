@@ -291,10 +291,10 @@ resource "aws_dynamodb_table" "registry" {
 resource "aws_dynamodb_table" "keys" {
   name         = "${local.name}-keys"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "api_key"
+  hash_key     = "api_key_hash"
 
   attribute {
-    name = "api_key"
+    name = "api_key_hash"
     type = "S"
   }
 
@@ -416,6 +416,7 @@ resource "aws_ecs_task_definition" "api" {
       { name = "EMBEDDING_QUEUE_URL", value = aws_sqs_queue.embedding.id },
       { name = "REGISTRY_TABLE", value = aws_dynamodb_table.registry.name },
       { name = "KEYS_TABLE", value = aws_dynamodb_table.keys.name },
+      { name = "API_DEV_BYPASS", value = "false" },
     ]
     secrets = [
       { name = "OPENAI_API_KEY", valueFrom = var.openai_api_key_arn },
@@ -482,35 +483,17 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# Production note: replace the self-signed listener cert with an ACM-issued one
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.this.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate.self.arn
+  certificate_arn   = var.acm_certificate_arn
 
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.api.arn
   }
-}
-
-resource "tls_private_key" "self" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
-}
-
-resource "tls_self_signed_cert" "self" {
-  private_key_pem = tls_private_key.self.private_key_pem
-  subject { common_name = "${local.name}.internal" }
-  validity_period_hours = 8760
-  allowed_uses          = ["key_encipherment", "digital_signature", "server_auth"]
-}
-
-resource "aws_acm_certificate" "self" {
-  private_key      = tls_private_key.self.private_key_pem
-  certificate_body = tls_self_signed_cert.self.cert_pem
 }
 
 # ── ECS service ──────────────────────────────────────────────────────────────
@@ -568,5 +551,116 @@ resource "aws_appautoscaling_policy" "api_cpu" {
     }
     scale_in_cooldown  = 120
     scale_out_cooldown = 30
+  }
+}
+
+# ── CloudWatch alarms ────────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_metric_alarm" "api_5xx" {
+  alarm_name          = "${local.name}-api-5xx"
+  alarm_description   = "ALB is returning 5xx errors for the VecturaFlow API."
+  namespace           = "AWS/ApplicationELB"
+  metric_name         = "HTTPCode_ELB_5XX_Count"
+  statistic           = "Sum"
+  period              = 60
+  evaluation_periods  = 5
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "api_target_response_time" {
+  alarm_name          = "${local.name}-api-target-response-time"
+  alarm_description   = "API target response time is above two seconds."
+  namespace           = "AWS/ApplicationELB"
+  metric_name         = "TargetResponseTime"
+  statistic           = "Average"
+  period              = 60
+  evaluation_periods  = 5
+  threshold           = 2
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+    TargetGroup  = aws_lb_target_group.api.arn_suffix
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ingestion_dlq_visible" {
+  alarm_name          = "${local.name}-ingestion-dlq-visible"
+  alarm_description   = "Ingestion DLQ has messages waiting for triage."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    QueueName = aws_sqs_queue.ingestion_dlq.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "embedding_dlq_visible" {
+  alarm_name          = "${local.name}-embedding-dlq-visible"
+  alarm_description   = "Embedding DLQ has messages waiting for triage."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    QueueName = aws_sqs_queue.embedding_dlq.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ingestion_queue_age" {
+  alarm_name          = "${local.name}-ingestion-queue-age"
+  alarm_description   = "Oldest ingestion message has waited more than five minutes."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateAgeOfOldestMessage"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 5
+  threshold           = 300
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    QueueName = aws_sqs_queue.ingestion.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "embedding_queue_age" {
+  alarm_name          = "${local.name}-embedding-queue-age"
+  alarm_description   = "Oldest embedding message has waited more than five minutes."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateAgeOfOldestMessage"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 5
+  threshold           = 300
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    QueueName = aws_sqs_queue.embedding.name
   }
 }

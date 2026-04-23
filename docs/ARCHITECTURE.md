@@ -165,7 +165,7 @@ section       string   DOCX heading / section (when available)
 
 | Attribute     | Type | Notes                                        |
 |---------------|------|----------------------------------------------|
-| `api_key` (PK)| S    | the raw key (hash in production — TODO)      |
+| `api_key_hash` (PK)| S | SHA-256 hash of the bearer token           |
 | `key_id`      | S    | stable identifier used in metrics and logs  |
 | `owner`       | S    | contact email                                |
 | `revoked`     | BOOL | if true, auth fails with 401                 |

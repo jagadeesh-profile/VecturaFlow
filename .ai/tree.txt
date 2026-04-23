@@ -138,6 +138,8 @@
 ./infra/terraform
 ./infra/terraform/.terraform
 ./infra/terraform/.terraform.lock.hcl
+./infra/terraform/backend.example.hcl
+./infra/terraform/backend.tf
 ./infra/terraform/lambdas.tf
 ./infra/terraform/main.tf
 ./infra/terraform/outputs.tf

@@ -6,6 +6,7 @@ Inject via Depends() — never instantiate clients inside route handlers.
 from __future__ import annotations
 
 from functools import lru_cache
+import hashlib
 from typing import Any
 
 import boto3
@@ -35,6 +36,11 @@ def get_keys_table() -> Any:
 # ─────────────────────────────────────────────────────────────────────────────
 # API key authentication
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _hash_api_key(api_key: str) -> str:
+    """Store and compare API keys by SHA-256 digest, never by raw token."""
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
 
 async def verify_api_key(
     authorization: str | None = Header(default=None),
@@ -78,14 +84,19 @@ async def verify_api_key(
             ).model_dump(),
         )
 
-    # Skip DynamoDB auth in development if key == "dev"
-    if settings.api_env == "development" and api_key == "dev":
+    # Local-only shortcut for make/dev workflows; disabled unless explicit.
+    if settings.api_env == "development" and settings.api_dev_bypass and api_key == "dev":
         logger.debug("auth.dev_bypass")
-        return {"api_key": "dev", "owner": "local", "key_id": "dev-key"}
+        return {
+            "api_key_hash": _hash_api_key("dev"),
+            "owner": "local",
+            "key_id": "dev-key",
+        }
 
+    api_key_hash = _hash_api_key(api_key)
     try:
         keys_table = get_keys_table()
-        response = keys_table.get_item(Key={"api_key": api_key})
+        response = keys_table.get_item(Key={"api_key_hash": api_key_hash})
         item = response.get("Item")
     except Exception as exc:
         logger.error("auth.dynamo_error", error=str(exc))
@@ -99,7 +110,7 @@ async def verify_api_key(
         ) from exc
 
     if not item:
-        logger.warning("auth.invalid_key", key_prefix=api_key[:8])
+        logger.warning("auth.invalid_key", key_hash_prefix=api_key_hash[:12])
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorDetail(

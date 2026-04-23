@@ -32,3 +32,10 @@ Files: .ai/CONTEXT.md; .ai/CHANGELOG-AI.md
 Decision: Verified commit 71c32fb on main with the full Python 3.11 test suite before presenting integration/next-step options.
 Next: User chooses whether to push, keep local, or start another hardening task.
 Blockers: none
+
+## [2026-04-23T07:16:59.2150328-05:00] TOOL=codex
+Task: Implement strongly recommended production hardening
+Files: api/config.py (L44), api/dependencies.py (L40-L113), infra/terraform/main.tf (L294-L650), infra/terraform/variables.tf (L88-L98), infra/terraform/backend.tf (L1-L3), infra/terraform/backend.example.hcl (L1-L5), tests/test_api.py (L57-L212), tests/test_infra_static.py (L57-L104), docs/*, graphify/*
+Decision: Replaced raw API-key storage with SHA-256 DynamoDB keys, gated the local dev bypass behind API_DEV_BYPASS, required ACM-managed ALB TLS, added S3+DynamoDB backend config scaffolding, and added CloudWatch alarms for API/SQS health while leaving real key rotation/state migration/deploy as AWS account actions.
+Next: Provision/migrate Terraform state backend, apply Terraform with a real ACM certificate ARN, rotate exposed API keys, and deploy/push updated artifacts.
+Blockers: Actual AWS key rotation, Terraform state migration, and artifact deployment require account-side action.

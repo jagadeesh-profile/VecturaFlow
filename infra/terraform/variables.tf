@@ -85,6 +85,17 @@ variable "pinecone_api_key_arn" {
   type        = string
 }
 
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for the public ALB HTTPS listener"
+  type        = string
+}
+
+variable "alarm_actions" {
+  description = "SNS topic ARNs or other CloudWatch alarm action ARNs"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags applied to every resource"
   type        = map(string)

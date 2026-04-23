@@ -104,7 +104,7 @@ A Mermaid rendering lives at [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | Idempotent ingestion                   | SHA-256 `doc_id`, DynamoDB conditional writes, partial-batch SQS responses (`batchItemFailures`).    |
 | Document parsing                       | PDF (PyMuPDF), DOCX (python-docx), CSV (pandas + `on_bad_lines="skip"`), TXT, JSON. Metadata-preserving chunking. |
 | Rate limiting                          | Lock-protected in-process token bucket keyed on `key_id` → HTTP 429 + `Retry-After`.                 |
-| Auth                                   | Bearer tokens in DynamoDB `keys` table; `dev` bypass only when `API_ENV=development`.                |
+| Auth                                   | Bearer tokens hashed in DynamoDB `keys` table; `dev` bypass only with `API_ENV=development` and `API_DEV_BYPASS=true`. |
 | Observability                          | structlog JSON logs with request-ID binding; Prometheus counters, histograms, and gauges exposed at `/metrics`. |
 | Health                                 | `/health` (ECS liveness), `/healthz` (k8s alias), `/readyz` (asserts required settings).             |
 | Container                              | Multi-stage `python:3.11-slim-bookworm`, non-root `app` user, tini as PID 1, healthcheck baked in.  |
@@ -121,11 +121,11 @@ A Mermaid rendering lives at [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ```bash
 docker-compose up --build
-# API at http://localhost:8000 — dev Bearer key is "dev"
+# API at http://localhost:8000 — dev Bearer key is "dev" when API_DEV_BYPASS=true
 ```
 
-LocalStack provisions the S3 bucket, SQS queues, and DynamoDB tables; the `setup`
-one-shot container seeds the dev API key.
+LocalStack provisions the S3 bucket, SQS queues, and DynamoDB tables; the local
+dev key is a synthetic bypass and is not stored in DynamoDB.
 
 ```bash
 curl -X POST http://localhost:8000/v1/chat/completions \

@@ -465,10 +465,10 @@ Attributes:
 ### 10.2 DynamoDB — `vecturaflow-keys`
 
 ```
-Partition Key: api_key (String)
+Partition Key: api_key_hash (String)
 
 Attributes:
-  api_key       String    Bearer token value
+  api_key_hash  String    SHA-256 hash of bearer token value
   key_id        String    Human-readable identifier
   owner         String    Owner name / team
   revoked       Boolean   If true, all requests rejected
@@ -644,7 +644,8 @@ VecturaFlow uses a Claude Code agent architecture — each agent is a `.md` file
 ```
 Client → API Gateway → QueryHandlerAgent
   → Extract "Bearer <key>" from Authorization header
-  → DynamoDB.get_item(api_key=key)
+  → SHA-256 hash key
+  → DynamoDB.get_item(api_key_hash=hash)
   → If not found OR revoked=true → 401
   → If found → proceed with request
 ```

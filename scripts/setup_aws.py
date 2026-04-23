@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 
 import boto3
 from botocore.exceptions import ClientError
@@ -123,7 +122,7 @@ def create_dynamodb_table(dynamo, table_name: str, dry_run: bool) -> None:
             raise
 
 
-def create_api_keys_table(dynamo, table_name: str, region: str, dry_run: bool) -> None:
+def create_api_keys_table(dynamo, table_name: str, dry_run: bool) -> None:
     print(f"\n  DynamoDB table: {table_name}")
     if dry_run:
         print("    [DRY RUN] Skipped")
@@ -131,27 +130,17 @@ def create_api_keys_table(dynamo, table_name: str, region: str, dry_run: bool) -
     try:
         dynamo.create_table(
             TableName=table_name,
-            KeySchema=[{"AttributeName": "api_key", "KeyType": "HASH"}],
+            KeySchema=[{"AttributeName": "api_key_hash", "KeyType": "HASH"}],
             AttributeDefinitions=[
-                {"AttributeName": "api_key", "AttributeType": "S"},
+                {"AttributeName": "api_key_hash", "AttributeType": "S"},
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        # Wait for table to be created, then seed dev key with proper region
+        # Wait for table to be created before returning to callers.
         waiter = dynamo.get_waiter("table_exists")
         waiter.wait(TableName=table_name)
-        
-        # Use resource with proper region to seed dev key
-        dynamo_resource = boto3.resource("dynamodb", region_name=region)
-        table = dynamo_resource.Table(table_name)
-        table.put_item(Item={
-            "api_key": "dev",
-            "key_id": "dev-key",
-            "owner": "local",
-            "revoked": False,
-            "created_at": "2024-01-01T00:00:00Z",
-        })
-        print("    Created + seeded dev key ('dev')")
+
+        print("    Created with hashed API key partition key")
     except ClientError as exc:
         if exc.response["Error"]["Code"] == "ResourceInUseException":
             print("    Already exists — skipped")
@@ -211,7 +200,7 @@ def main():
 
     print("\n── DynamoDB ────────────────────────────────────────────────")
     create_dynamodb_table(dynamo, registry_table, args.dry_run)
-    create_api_keys_table(dynamo, keys_table, region, args.dry_run)
+    create_api_keys_table(dynamo, keys_table, args.dry_run)
 
     print(f"\n{'='*60}")
     print(f"{prefix}Setup complete.")
@@ -220,7 +209,7 @@ def main():
         print("  1. Copy queue URLs to .env (INGESTION_QUEUE_URL, EMBEDDING_QUEUE_URL)")
         print("  2. Run: python -m scripts.setup_pinecone")
         print("  3. Run: uvicorn api.main:app --reload")
-        print("  4. Test: curl -H 'Authorization: Bearer dev' http://localhost:8000/health")
+        print("  4. For local Bearer dev auth, set API_DEV_BYPASS=true")
     print(f"{'='*60}\n")
 
 

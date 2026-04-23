@@ -85,13 +85,15 @@ TTL when this actually hurts (currently: it doesn't).
 
 ---
 
-### 7. Dev bypass key is literally `"dev"`
+### 7. Dev bypass key is literally `"dev"` and opt-in
 
-`API_ENV=development` + `Bearer dev` skips DynamoDB and returns a synthetic
-key record. This is why `make dev` works without AWS credentials.
+`API_ENV=development` + `API_DEV_BYPASS=true` + `Bearer dev` skips DynamoDB and
+returns a synthetic key record. This is why `make dev` works without AWS
+credentials while preventing accidental bypass if a production-like environment
+is mislabeled as development.
 
-**Safety:** `verify_api_key` checks `settings.api_env == "development"`
-first. In production this branch is unreachable.
+**Safety:** `verify_api_key` checks both settings before accepting the literal
+dev key. In production this branch is unreachable.
 
 ---
 

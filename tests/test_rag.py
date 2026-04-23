@@ -502,7 +502,7 @@ class TestChatCompletionsEndpoint(unittest.TestCase):
         self._dynamo_patcher = patch("api.dependencies.get_keys_table")
         self.mock_run_rag = self._run_rag_patcher.start()
         self.mock_dynamo = self._dynamo_patcher.start()
-        self.mock_dynamo.return_value.get_item.return_value = {"Item": {"api_key": "dev", "key_id": "dev"}}
+        self.mock_dynamo.return_value.get_item.return_value = {"Item": {"api_key_hash": "dev-hash", "key_id": "dev"}}
 
         from fastapi.testclient import TestClient
 

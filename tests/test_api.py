@@ -28,6 +28,7 @@ os.environ.update({
     "REGISTRY_TABLE": "vecturaflow-registry-test",
     "KEYS_TABLE": "vecturaflow-keys-test",
     "API_ENV": "development",
+    "API_DEV_BYPASS": "true",
     "API_DEBUG": "true",
 })
 
@@ -51,13 +52,12 @@ def aws_resources():
             AttributeDefinitions=[{"AttributeName": "doc_id", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        keys_table = dynamo.create_table(
+        dynamo.create_table(
             TableName="vecturaflow-keys-test",
-            KeySchema=[{"AttributeName": "api_key", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "api_key", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "api_key_hash", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "api_key_hash", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        keys_table.put_item(Item={"api_key": "dev", "key_id": "dev-key", "owner": "test", "revoked": False})
 
         # SQS queue
         sqs = boto3.client("sqs", region_name=region)
@@ -171,6 +171,44 @@ async def test_list_models(api_client):
     data = r.json()
     assert data["object"] == "list"
     assert any(m["id"] == "vecturaflow" for m in data["data"])
+
+
+@pytest.mark.asyncio
+async def test_api_key_lookup_uses_sha256_hash(aws_resources):
+    import boto3
+
+    from api.config import Settings
+    from api.dependencies import _get_dynamodb_resource, verify_api_key
+
+    api_key = "vf_live_secret"
+    api_key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("vecturaflow-keys-test")
+    table.put_item(Item={"api_key_hash": api_key_hash, "key_id": "live-key", "owner": "test", "revoked": False})
+
+    _get_dynamodb_resource.cache_clear()
+    settings = Settings(api_env="production", api_dev_bypass=False)
+
+    item = await verify_api_key(authorization=f"Bearer {api_key}", settings=settings)
+
+    assert item["key_id"] == "live-key"
+    assert item["api_key_hash"] == api_key_hash
+    assert "api_key" not in item
+
+
+@pytest.mark.asyncio
+async def test_dev_key_requires_explicit_bypass_flag(aws_resources):
+    from fastapi import HTTPException
+
+    from api.config import Settings
+    from api.dependencies import _get_dynamodb_resource, verify_api_key
+
+    _get_dynamodb_resource.cache_clear()
+    settings = Settings(api_env="development", api_dev_bypass=False)
+
+    with pytest.raises(HTTPException) as exc:
+        await verify_api_key(authorization="Bearer dev", settings=settings)
+
+    assert exc.value.status_code == 401
 
 
 # ─────────────────────────────────────────────────────────────────────────────

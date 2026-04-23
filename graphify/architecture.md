@@ -48,7 +48,7 @@
 | Vector DB      | Pinecone serverless              | 3.2.2    | us-east-1, cosine, 1536-dim.                     |
 | Queue          | AWS SQS                          | —        | Standard queues (not FIFO) with DLQs.            |
 | Registry       | AWS DynamoDB                     | —        | On-demand. GSI `status-ingested_at-index`.       |
-| Auth store     | AWS DynamoDB                     | —        | `vecturaflow-keys` table, PK = `api_key`.        |
+| Auth store     | AWS DynamoDB                     | —        | `vecturaflow-keys` table, PK = `api_key_hash`.   |
 | Cache          | Redis                            | 5.0.4    | ElastiCache in prod, localhost in dev. 5-min TTL for retrieval. |
 | Logging        | structlog                        | 24.1.0   | JSON in prod, console in dev.                    |
 | Metrics        | prometheus_client                | —        | Explicit `CollectorRegistry`, `/metrics` endpoint. |
@@ -107,6 +107,7 @@ Never read `os.environ` anywhere else.
 | `KEYS_TABLE`                  | `vecturaflow-keys`    | dependencies.verify_api_key |
 | `REDIS_HOST` / `REDIS_PORT`   | `localhost` / `6379`  | retriever cache             |
 | `API_ENV`                     | `development`         | config.is_production        |
+| `API_DEV_BYPASS`              | `false`               | local-only Bearer dev bypass |
 | `RETRIEVAL_TOP_K`             | `5`                   | retriever                   |
 | `RETRIEVAL_SCORE_THRESHOLD`   | `0.70`                | retriever                   |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP`| `512` / `50`          | chunker                     |

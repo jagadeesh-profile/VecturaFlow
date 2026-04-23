@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # ── API ───────────────────────────────────────────────────────────────────
     api_env: str = "development"
     api_debug: bool = False
+    api_dev_bypass: bool = False
     api_title: str = "VecturaFlow API"
     api_version: str = "1.0.0"
 

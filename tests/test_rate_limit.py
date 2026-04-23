@@ -17,6 +17,7 @@ os.environ.update({
     "REGISTRY_TABLE": "vecturaflow-registry-test",
     "KEYS_TABLE": "vecturaflow-keys-test",
     "API_ENV": "development",
+    "API_DEV_BYPASS": "true",
     "API_DEBUG": "true",
 })
 
@@ -86,13 +87,12 @@ def aws_resources():
             AttributeDefinitions=[{"AttributeName": "doc_id", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        keys_table = dynamo.create_table(
+        dynamo.create_table(
             TableName="vecturaflow-keys-test",
-            KeySchema=[{"AttributeName": "api_key", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "api_key", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "api_key_hash", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "api_key_hash", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        keys_table.put_item(Item={"api_key": "dev", "key_id": "dev-key", "owner": "test", "revoked": False})
         yield
 
 
