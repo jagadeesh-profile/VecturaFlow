@@ -34,6 +34,7 @@
 ./.dockerignore
 ./.env.example
 ./.github
+./.github/copilot-instructions.md
 ./.github/workflows
 ./.github/workflows/ci.yml
 ./.github/workflows/deploy.yml
@@ -130,6 +131,7 @@
 ./scripts/backfill_s3_to_pinecone.py
 ./scripts/demo.py
 ./scripts/graphify.py
+./scripts/pre-commit-hook.sh
 ./scripts/preflight.py
 ./scripts/sample_data
 ./scripts/sample_data/sample.csv

@@ -1,3 +1,8 @@
+62fc653 chore: prepend .ai/ read-order session header to CLAUDE.md
+b479dea chore: add .github/copilot-instructions.md — Copilot session protocol
+3edeb16 chore: update AGENTS.md — two-layer read order (graphify/ + .ai/)
+dd1ba07 chore: add .ai/switch-guard.sh — tool handoff snapshot script
+35a5fcb handoff: →  ()
 c6c7e52 chore: add .ai/deps.md — pinned dependency + doc link registry
 90f0236 chore: add .ai/DECISIONS.md — ADR register (ADR-0001: two-layer memory)
 e4a65e1 chore: add .ai/CHANGELOG-AI.md — append-only AI session log
