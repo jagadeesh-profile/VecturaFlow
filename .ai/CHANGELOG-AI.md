@@ -46,3 +46,10 @@ Files: Dockerfile.lambda; Makefile; requirements.lambda.txt; infra/terraform/mai
 Decision: Pushed `b8563a0`, migrated Terraform to remote state, created/migrated hashed key table v2, deleted the raw-key table after v2-only auth smoke passed, deployed ECS revision 2 and three ingestion Lambdas, fixed Lambda image/runtime deployment blockers, and left ACM managed-cert cutover pending external DNS delegation.
 Next: Commit/push this rollout fix commit, then fix GoDaddy DNS delegation or copy the ACM CNAME there so the Amazon-issued certificate can validate and replace the imported ALB cert.
 Blockers: `vecturaflow.chatslm.com` ACM cert remains `PENDING_VALIDATION` because public `chatslm.com` nameservers are GoDaddy, not the Route53 hosted zone containing the validation record.
+
+## [2026-04-23T14:20:28.5577165Z] TOOL=codex
+Task: Upload LLM interview PDF and verify ingestion workflow
+Files: .ai/CONTEXT.md; .ai/CHANGELOG-AI.md
+Decision: Uploaded `LLM Interview Questions.pdf` to the production ingestion bucket under `raw/`, tracked the deterministic S3 doc_id through DynamoDB registry states, verified SQS/DLQ queues drained, confirmed Lambda logs for queueing/parsing/embedding, and fetched all 48 expected vectors from Pinecone.
+Next: Optional API RAG smoke query against the uploaded document, or upload additional documents under `raw/`.
+Blockers: none
