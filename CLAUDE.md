@@ -1,3 +1,25 @@
+<!-- SESSION START — read this block first, every session, no exceptions -->
+## Session Read Order (Claude Code)
+
+**Step 1 — Architecture (1.4K tokens):** Read `graphify/INDEX.md`
+**Step 2 — Live state (300 tokens):** Read `.ai/CONTEXT.md`
+**Step 3 — Invariants (2K tokens):** Read `.ai/MEMORY.md`
+
+Total orientation cost: ~4K tokens. Do NOT scan source files before completing these 3 reads.
+
+### Before touching any file:
+- Check `graphify/modules/<module>-<file>.md` for purpose, imports, key functions
+- Never read a file >200 lines in full — get line range from module card first
+- Never re-run `find`/`ls`/`git log` — use `.ai/tree.txt` / `hotspots.txt` / `recent-commits.txt`
+
+### Session end (non-negotiable):
+1. Append to `.ai/CHANGELOG-AI.md` with `TOOL=claude-code`
+2. Overwrite `.ai/CONTEXT.md` with current task state
+3. If code structure changed: run `python scripts/graphify.py`
+<!-- END SESSION START -->
+
+---
+
 # VecturaFlow — Claude Code Project Brain
 
 > Read this file first. Every session. Every agent.
