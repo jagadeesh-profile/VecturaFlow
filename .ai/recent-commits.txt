@@ -1,0 +1,15 @@
+c6c7e52 chore: add .ai/deps.md — pinned dependency + doc link registry
+90f0236 chore: add .ai/DECISIONS.md — ADR register (ADR-0001: two-layer memory)
+e4a65e1 chore: add .ai/CHANGELOG-AI.md — append-only AI session log
+474d66a chore: add .ai/CONTEXT.md — live handoff state template
+d07de14 chore: add .ai/MEMORY.md — merged session invariants layer
+63c8aa4 chore: add .aiignore for AI tool scan exclusions
+d4d0a4f lint: fix isort order in lambda_parser imports (ruff I001)
+dd12260 Add RAG verification, calibration, and operations troubleshooting docs
+86c08b6 ci: mark Trivy scan non-blocking + document CVE remediation plan
+7f74926 ci: build wheelhouse before docker image
+9117d80 ci: bump trivy-action 0.20.0 -> v0.35.0 (old tag unresolvable)
+4734318 lint: add return type annotations + enum modernization (39 ruff fixes)
+4428efc deps: drop unstructured[pdf] extra — conflicts with langchain 0.2.x numpy<2
+dab5757 ci: switch to uv installer to avoid pip resolution-too-deep
+7ac68c0 feat: initial public release of VecturaFlow
