@@ -131,7 +131,7 @@ import boto3
 import hashlib
 
 api_key = "vf_" + "<random 32 hex>"
-table = boto3.resource("dynamodb").Table("vecturaflow-keys")
+table = boto3.resource("dynamodb").Table("vecturaflow-keys-v2")
 table.put_item(Item={
     "api_key_hash": hashlib.sha256(api_key.encode("utf-8")).hexdigest(),
     "key_id": "acme-prod-001",

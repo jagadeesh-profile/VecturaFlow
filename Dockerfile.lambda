@@ -24,7 +24,7 @@ ENV PIP_NO_CACHE_DIR=1 \
 # Install runtime deps into the Lambda task root so imports resolve without
 # PYTHONPATH gymnastics.
 COPY requirements.lambda.txt ${LAMBDA_TASK_ROOT}/
-RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.lambda.txt --target ${LAMBDA_TASK_ROOT}
+RUN pip install --only-binary=:all: -r ${LAMBDA_TASK_ROOT}/requirements.lambda.txt --target ${LAMBDA_TASK_ROOT}
 
 # Application source. Each module is imported via its fully-qualified path
 # (e.g. `ingestion.lambda_s3.handler`) so the Lambda command must be set to

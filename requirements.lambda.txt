@@ -13,6 +13,9 @@ pinecone-client==3.2.2
 
 langchain==0.2.1
 langchain-openai==0.1.8
+# Lambda Python 3.11 accepts the 0.7.0 manylinux2014 wheel; newer transitive
+# releases can fall back to Rust source builds on this runtime.
+tiktoken==0.7.0
 langchain-community==0.2.1
 langchain-text-splitters==0.2.0
 

@@ -1,4 +1,4 @@
-.PHONY: install setup-aws setup-pinecone dev test lint clean graphify graphify-check verify verify-q preflight triage triage-apply pinecone-stats check-all help
+.PHONY: install setup-aws setup-pinecone dev lambda-image-push test lint clean graphify graphify-check verify verify-q preflight triage triage-apply pinecone-stats check-all help
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Setup
@@ -51,6 +51,10 @@ setup: install setup-aws setup-pinecone ## Full setup (install + aws + pinecone)
 dev: ## Start FastAPI dev server
 	@echo "Starting VecturaFlow API in dev mode..."
 	uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+lambda-image-push: ## Build and push Lambda image: make lambda-image-push IMAGE=<ecr-uri:tag>
+	@test -n "$(IMAGE)" || (echo "IMAGE is required, e.g. make lambda-image-push IMAGE=..."; exit 1)
+	docker buildx build --platform linux/amd64 --provenance=false --sbom=false -f Dockerfile.lambda -t "$(IMAGE)" --push .
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Graphify — regenerate portable AI-agent memory

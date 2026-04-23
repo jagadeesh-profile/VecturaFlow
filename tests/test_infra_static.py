@@ -104,3 +104,45 @@ def test_keys_table_uses_sha256_hash_as_partition_key():
     assert 'hash_key     = "api_key_hash"' in keys_table
     assert 'name = "api_key_hash"' in keys_table
     assert 'hash_key     = "api_key"' not in keys_table
+
+
+def test_keys_table_uses_v2_name_for_safe_hash_key_migration():
+    main_tf = (ROOT / "infra" / "terraform" / "main.tf").read_text()
+
+    keys_table = re.search(
+        r'resource "aws_dynamodb_table" "keys" \{(?P<body>.*?)\n\}',
+        main_tf,
+        re.S,
+    ).group("body")
+
+    assert 'name         = "${local.name}-keys-v2"' in keys_table
+
+
+def test_lambda_image_installs_binary_wheels_only():
+    dockerfile = (ROOT / "Dockerfile.lambda").read_text()
+    requirements = (ROOT / "requirements.lambda.txt").read_text()
+
+    assert "--only-binary=:all:" in dockerfile
+    assert "tiktoken==0.7.0" in requirements
+
+
+def test_lambda_environment_does_not_set_reserved_region_keys():
+    lambdas_tf = (ROOT / "infra" / "terraform" / "lambdas.tf").read_text()
+
+    assert "AWS_DEFAULT_REGION" not in lambdas_tf
+
+
+def test_makefile_pushes_lambda_image_with_lambda_compatible_manifest():
+    makefile = (ROOT / "Makefile").read_text()
+
+    assert "lambda-image-push" in makefile
+    assert "--platform linux/amd64" in makefile
+    assert "--provenance=false" in makefile
+    assert "--sbom=false" in makefile
+
+
+def test_s3_sqs_lambda_filter_uses_valid_records_pattern_shape():
+    lambdas_tf = (ROOT / "infra" / "terraform" / "lambdas.tf").read_text()
+
+    assert "Records = {" in lambdas_tf
+    assert "Records = [{" not in lambdas_tf

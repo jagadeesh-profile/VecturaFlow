@@ -112,7 +112,6 @@ resource "aws_lambda_function" "ingest_s3" {
 
   environment {
     variables = {
-      AWS_DEFAULT_REGION  = var.region
       INGESTION_QUEUE_URL = aws_sqs_queue.ingestion.id
       REGISTRY_TABLE      = aws_dynamodb_table.registry.name
     }
@@ -132,7 +131,7 @@ resource "aws_lambda_event_source_mapping" "ingest_s3" {
   # (produced by lambda_s3 itself) go to lambda_parser via a second mapping.
   filter_criteria {
     filter {
-      pattern = jsonencode({ body = { Records = [{ eventSource = ["aws:s3"] }] } })
+      pattern = jsonencode({ body = { Records = { eventSource = ["aws:s3"] } } })
     }
   }
 }
@@ -185,7 +184,6 @@ resource "aws_lambda_function" "ingest_parser" {
 
   environment {
     variables = {
-      AWS_DEFAULT_REGION  = var.region
       EMBEDDING_QUEUE_URL = aws_sqs_queue.embedding.id
       REGISTRY_TABLE      = aws_dynamodb_table.registry.name
       CHUNK_SIZE          = "512"
@@ -263,7 +261,6 @@ resource "aws_lambda_function" "ingest_embed" {
 
   environment {
     variables = {
-      AWS_DEFAULT_REGION   = var.region
       REGISTRY_TABLE       = aws_dynamodb_table.registry.name
       INGESTION_BUCKET     = aws_s3_bucket.ingestion.id
       PINECONE_INDEX       = var.pinecone_index

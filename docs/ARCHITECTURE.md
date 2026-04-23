@@ -161,7 +161,7 @@ section       string   DOCX heading / section (when available)
 
 **GSI `status-ingested_at-index`** — always use this for status filtering. Never `Scan`.
 
-**`vecturaflow-keys`**
+**`vecturaflow-keys-v2`**
 
 | Attribute     | Type | Notes                                        |
 |---------------|------|----------------------------------------------|

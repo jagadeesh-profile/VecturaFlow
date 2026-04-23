@@ -1,3 +1,4 @@
+b8563a0 fix: harden production security posture
 0d37ea1 codex: update post-fix handoff
 71c32fb fix: address project review findings
 5b0c7f8 feat: add .ai/ session layer — two-layer AI memory for Claude/Codex/Copilot

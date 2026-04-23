@@ -289,7 +289,7 @@ resource "aws_dynamodb_table" "registry" {
 }
 
 resource "aws_dynamodb_table" "keys" {
-  name         = "${local.name}-keys"
+  name         = "${local.name}-keys-v2"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "api_key_hash"
 

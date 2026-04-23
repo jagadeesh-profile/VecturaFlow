@@ -146,6 +146,8 @@
 ./infra/terraform/README.md
 ./infra/terraform/terraform.tfstate
 ./infra/terraform/terraform.tfstate.backup
+./infra/terraform/terraform.tfstate.backup.pre-remote-backend.bak
+./infra/terraform/terraform.tfstate.pre-remote-backend.bak
 ./infra/terraform/variables.tf
 ./infra/terraform/versions.tf
 ./ingestion

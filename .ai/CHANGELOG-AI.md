@@ -39,3 +39,10 @@ Files: api/config.py (L44), api/dependencies.py (L40-L113), infra/terraform/main
 Decision: Replaced raw API-key storage with SHA-256 DynamoDB keys, gated the local dev bypass behind API_DEV_BYPASS, required ACM-managed ALB TLS, added S3+DynamoDB backend config scaffolding, and added CloudWatch alarms for API/SQS health while leaving real key rotation/state migration/deploy as AWS account actions.
 Next: Provision/migrate Terraform state backend, apply Terraform with a real ACM certificate ARN, rotate exposed API keys, and deploy/push updated artifacts.
 Blockers: Actual AWS key rotation, Terraform state migration, and artifact deployment require account-side action.
+
+## [2026-04-23T14:01:46.6957632Z] TOOL=codex
+Task: Execute 7-step production hardening rollout
+Files: Dockerfile.lambda; Makefile; requirements.lambda.txt; infra/terraform/main.tf; infra/terraform/lambdas.tf; tests/test_infra_static.py; docs/ARCHITECTURE.md; docs/OPERATIONS.md; graphify/architecture.md; graphify/glossary.md; graphify/graph.json; scripts/graphify.py; .ai/CONTEXT.md
+Decision: Pushed `b8563a0`, migrated Terraform to remote state, created/migrated hashed key table v2, deleted the raw-key table after v2-only auth smoke passed, deployed ECS revision 2 and three ingestion Lambdas, fixed Lambda image/runtime deployment blockers, and left ACM managed-cert cutover pending external DNS delegation.
+Next: Commit/push this rollout fix commit, then fix GoDaddy DNS delegation or copy the ACM CNAME there so the Amazon-issued certificate can validate and replace the imported ALB cert.
+Blockers: `vecturaflow.chatslm.com` ACM cert remains `PENDING_VALIDATION` because public `chatslm.com` nameservers are GoDaddy, not the Route53 hosted zone containing the validation record.

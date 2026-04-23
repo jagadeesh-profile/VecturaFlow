@@ -64,7 +64,7 @@ KNOWN_RESOURCES = [
     {"id": "aws:dynamodb:registry", "kind": "aws", "service": "dynamodb",
      "name": "vecturaflow-registry", "notes": "PK doc_id; GSI status-ingested_at-index."},
     {"id": "aws:dynamodb:keys", "kind": "aws", "service": "dynamodb",
-     "name": "vecturaflow-keys", "notes": "PK api_key_hash."},
+     "name": "vecturaflow-keys-v2", "notes": "PK api_key_hash."},
     {"id": "pinecone:index", "kind": "external", "service": "pinecone",
      "name": "vecturaflow", "notes": "1536-dim cosine; us-east-1."},
     {"id": "redis:cache", "kind": "external", "service": "redis",

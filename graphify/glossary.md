@@ -81,7 +81,7 @@ context. UNGROUNDED → downgrade confidence to `low`.
 | `vecturaflow-ingest-dlq`        | SQS DLQ           | Poison messages from ingest.             |
 | `vecturaflow-embed-dlq`         | SQS DLQ           | Poison messages from embed.              |
 | `vecturaflow-registry`          | DynamoDB          | PK `doc_id`, GSI `status-ingested_at`.   |
-| `vecturaflow-keys`              | DynamoDB          | PK `api_key_hash`. Dev bypass is synthetic. |
+| `vecturaflow-keys-v2`           | DynamoDB          | PK `api_key_hash`. Dev bypass is synthetic. |
 | Pinecone index `vecturaflow`    | Pinecone          | 1536-dim cosine, us-east-1.              |
 | ElastiCache Redis               | Redis 7           | 5-min retrieval cache.                   |
 | `vecturaflow-api` cluster       | ECS Fargate       | Runs `api.main:app`.                     |
