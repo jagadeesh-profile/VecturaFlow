@@ -180,8 +180,14 @@ def generate_answer(state: AgentState) -> AgentState:
     for c in chunks:
         source_label = c.get("source", "unknown")
         page = c.get("page")
-        if page:
-            source_label = f"{source_label} (page {page})"
+        section = c.get("section")
+        location = []
+        if page is not None:
+            location.append(f"page {page}")
+        if section:
+            location.append(f"section {section}")
+        if location:
+            source_label = f"{source_label} ({', '.join(location)})"
         context_lines.append(f"[{source_label}]\n{c['text']}")
     context = "\n\n---\n\n".join(context_lines)
 
@@ -216,6 +222,8 @@ def generate_answer(state: AgentState) -> AgentState:
                     source=c.get("source", ""),
                     score=c.get("score", 0.0),
                     chunk_index=c.get("chunk_index", 0),
+                    page=c.get("page"),
+                    section=c.get("section"),
                 ).model_dump()
             )
             seen_sources.add(key)

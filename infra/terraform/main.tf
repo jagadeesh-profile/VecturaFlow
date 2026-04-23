@@ -21,8 +21,8 @@ provider "aws" {
 }
 
 locals {
-  name   = "${var.project}-${var.env}"
-  azs    = slice(data.aws_availability_zones.available.names, 0, length(var.public_subnet_cidrs))
+  name = "${var.project}-${var.env}"
+  azs  = slice(data.aws_availability_zones.available.names, 0, length(var.public_subnet_cidrs))
 }
 
 data "aws_availability_zones" "available" {
@@ -203,7 +203,7 @@ resource "aws_sqs_queue" "ingestion_dlq" {
 
 resource "aws_sqs_queue" "ingestion" {
   name                       = "${local.name}-ingestion"
-  visibility_timeout_seconds = 180
+  visibility_timeout_seconds = 360
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.ingestion_dlq.arn
     maxReceiveCount     = 5
@@ -217,7 +217,7 @@ resource "aws_sqs_queue" "embedding_dlq" {
 
 resource "aws_sqs_queue" "embedding" {
   name                       = "${local.name}-embedding"
-  visibility_timeout_seconds = 120
+  visibility_timeout_seconds = 360
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.embedding_dlq.arn
     maxReceiveCount     = 5
@@ -361,7 +361,7 @@ data "aws_iam_policy_document" "task" {
   statement {
     actions = [
       "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem",
-      "dynamodb:Query", "dynamodb:Scan",
+      "dynamodb:Query",
     ]
     resources = [
       aws_dynamodb_table.registry.arn,
@@ -408,17 +408,17 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
     environment = [
-      { name = "API_ENV",            value = var.env },
+      { name = "API_ENV", value = var.env },
       { name = "AWS_DEFAULT_REGION", value = var.region },
-      { name = "PINECONE_INDEX",     value = var.pinecone_index },
-      { name = "INGESTION_BUCKET",   value = aws_s3_bucket.ingestion.id },
+      { name = "PINECONE_INDEX", value = var.pinecone_index },
+      { name = "INGESTION_BUCKET", value = aws_s3_bucket.ingestion.id },
       { name = "INGESTION_QUEUE_URL", value = aws_sqs_queue.ingestion.id },
       { name = "EMBEDDING_QUEUE_URL", value = aws_sqs_queue.embedding.id },
-      { name = "REGISTRY_TABLE",     value = aws_dynamodb_table.registry.name },
-      { name = "KEYS_TABLE",         value = aws_dynamodb_table.keys.name },
+      { name = "REGISTRY_TABLE", value = aws_dynamodb_table.registry.name },
+      { name = "KEYS_TABLE", value = aws_dynamodb_table.keys.name },
     ]
     secrets = [
-      { name = "OPENAI_API_KEY",   valueFrom = var.openai_api_key_arn },
+      { name = "OPENAI_API_KEY", valueFrom = var.openai_api_key_arn },
       { name = "PINECONE_API_KEY", valueFrom = var.pinecone_api_key_arn },
     ]
     logConfiguration = {

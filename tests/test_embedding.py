@@ -17,6 +17,9 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
+import boto3
+from moto import mock_aws
+
 # ── Set env vars BEFORE importing any app module ─────────────────────────────
 os.environ.setdefault("OPENAI_API_KEY", "sk-test")
 os.environ.setdefault("PINECONE_API_KEY", "pc-test")
@@ -83,6 +86,50 @@ def _make_openai_response(texts: list[str]) -> MagicMock:
 
 class TestEmbeddingHandlerSuccess(unittest.TestCase):
 
+    @patch("embeddings.lambda_embed._secrets")
+    def test_secret_value_falls_back_to_secrets_manager_arn(self, mock_secrets):
+        """Lambda deploys ARNs, so runtime must resolve them to secret values."""
+        mock_secrets.return_value.get_secret_value.return_value = {"SecretString": "sk-live"}
+
+        from embeddings.lambda_embed import _secret_value
+
+        with patch.dict(
+            os.environ,
+            {"OPENAI_API_KEY": "", "OPENAI_API_KEY_ARN": "arn:aws:secretsmanager:test"},
+            clear=False,
+        ):
+            self.assertEqual(_secret_value("OPENAI_API_KEY"), "sk-live")
+        mock_secrets.return_value.get_secret_value.assert_called_once_with(
+            SecretId="arn:aws:secretsmanager:test"
+        )
+
+    @mock_aws
+    def test_registry_progress_marks_embedded_only_when_unique_chunks_complete(self):
+        """Real DynamoDB update expression must track unique chunks before completion."""
+        region = "us-east-1"
+        table_name = "vecturaflow-registry-progress"
+        dynamo = boto3.resource("dynamodb", region_name=region)
+        table = dynamo.create_table(
+            TableName=table_name,
+            KeySchema=[{"AttributeName": "doc_id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "doc_id", "AttributeType": "S"}],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        table.put_item(Item={"doc_id": "doc123", "status": "chunked"})
+
+        from embeddings import lambda_embed
+
+        lambda_embed._dynamo.cache_clear()
+        with patch.dict(os.environ, {"REGISTRY_TABLE": table_name}, clear=False):
+            lambda_embed._record_registry_progress("doc123", {"doc123_chunk_0"}, 2)
+            first = table.get_item(Key={"doc_id": "doc123"})["Item"]
+            self.assertEqual(first["status"], "chunked")
+
+            lambda_embed._record_registry_progress("doc123", {"doc123_chunk_1"}, 2)
+            second = table.get_item(Key={"doc_id": "doc123"})["Item"]
+            self.assertEqual(second["status"], "embedded")
+            self.assertEqual(second["embedded_chunk_ids"], {"doc123_chunk_0", "doc123_chunk_1"})
+
     @patch("embeddings.lambda_embed._cw")
     @patch("embeddings.lambda_embed._registry")
     @patch("embeddings.lambda_embed._pinecone_index")
@@ -113,6 +160,33 @@ class TestEmbeddingHandlerSuccess(unittest.TestCase):
 
         # DynamoDB updated
         mock_registry.return_value.update_item.assert_called_once()
+
+    @patch("embeddings.lambda_embed._cw")
+    @patch("embeddings.lambda_embed._registry")
+    @patch("embeddings.lambda_embed._pinecone_index")
+    @patch("embeddings.lambda_embed._openai_client")
+    def test_does_not_mark_doc_embedded_until_all_chunks_seen(
+        self, mock_openai, mock_index, mock_registry, mock_cw
+    ):
+        """A partial chunk batch must not advance registry status to embedded."""
+        chunk = _make_chunk(chunk_id="doc123_chunk_0", chunk_index=0)
+        event = {"Records": [_make_sqs_record(chunk, "msg-001")]}
+
+        mock_openai.return_value.embeddings.create.return_value = _make_openai_response([chunk["text"]])
+        mock_registry.return_value.update_item.return_value = {
+            "Attributes": {"embedded_chunk_ids": {"doc123_chunk_0"}, "total_chunks": 3}
+        }
+
+        from embeddings.lambda_embed import handler
+        result = handler(event, {})
+
+        self.assertEqual(result["batchItemFailures"], [])
+        calls = mock_registry.return_value.update_item.call_args_list
+        embedded_calls = [
+            call for call in calls
+            if call.kwargs.get("ExpressionAttributeValues", {}).get(":s") == "embedded"
+        ]
+        self.assertEqual(embedded_calls, [])
 
     @patch("embeddings.lambda_embed._cw")
     @patch("embeddings.lambda_embed._registry")
@@ -318,7 +392,7 @@ class TestEmbeddingHandlerEdgeCases(unittest.TestCase):
     def test_deduplicates_dynamo_updates_per_doc_id(
         self, mock_openai, mock_index, mock_registry, mock_cw
     ):
-        """Multiple chunks from same doc_id → DynamoDB updated only once."""
+        """Multiple chunks from same doc_id → one progress update and one final status update."""
         chunks = [
             _make_chunk(chunk_id=f"doc123_chunk_{i}", chunk_index=i)
             for i in range(3)
@@ -328,12 +402,23 @@ class TestEmbeddingHandlerEdgeCases(unittest.TestCase):
 
         texts = [c["text"] for c in chunks]
         mock_openai.return_value.embeddings.create.return_value = _make_openai_response(texts)
+        mock_registry.return_value.update_item.side_effect = [
+            {"Attributes": {
+                "embedded_chunk_ids": {f"doc123_chunk_{i}" for i in range(3)},
+                "total_chunks": 3,
+            }},
+            {},
+        ]
 
         from embeddings.lambda_embed import handler
         handler(event, {})
 
-        # All 3 chunks belong to "doc123" — DynamoDB should be called only once
-        self.assertEqual(mock_registry.return_value.update_item.call_count, 1)
+        self.assertEqual(mock_registry.return_value.update_item.call_count, 2)
+        final_call = mock_registry.return_value.update_item.call_args_list[-1]
+        self.assertEqual(
+            final_call.kwargs["ExpressionAttributeValues"][":s"],
+            "embedded",
+        )
 
 
 if __name__ == "__main__":

@@ -458,6 +458,25 @@
       "notes": "5-min TTL."
     },
     {
+      "id": "scripts.backfill_s3_to_pinecone",
+      "kind": "module",
+      "path": "scripts/backfill_s3_to_pinecone.py",
+      "owned_by": [],
+      "classes": [
+        "Config"
+      ],
+      "functions": [
+        "main",
+        "run"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore",
+        "openai",
+        "pinecone"
+      ]
+    },
+    {
       "id": "scripts.demo",
       "kind": "module",
       "path": "scripts/demo.py",
@@ -495,6 +514,19 @@
       "external_deps": []
     },
     {
+      "id": "scripts.preflight",
+      "kind": "module",
+      "path": "scripts/preflight.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "main"
+      ],
+      "external_deps": [
+        "openai"
+      ]
+    },
+    {
       "id": "scripts.setup_aws",
       "kind": "module",
       "path": "scripts/setup_aws.py",
@@ -527,6 +559,22 @@
       ]
     },
     {
+      "id": "scripts.triage_queue",
+      "kind": "module",
+      "path": "scripts/triage_queue.py",
+      "owned_by": [],
+      "classes": [
+        "TriageRow"
+      ],
+      "functions": [
+        "main"
+      ],
+      "external_deps": [
+        "boto3",
+        "botocore"
+      ]
+    },
+    {
       "id": "scripts.validate_env",
       "kind": "module",
       "path": "scripts/validate_env.py",
@@ -549,6 +597,51 @@
         "main"
       ],
       "external_deps": []
+    },
+    {
+      "id": "scripts.verify_end_to_end",
+      "kind": "module",
+      "path": "scripts/verify_end_to_end.py",
+      "owned_by": [],
+      "classes": [
+        "QuestionResult",
+        "QuestionSpec"
+      ],
+      "functions": [
+        "main"
+      ],
+      "external_deps": [
+        "openai",
+        "pinecone"
+      ]
+    },
+    {
+      "id": "scripts.verify_pinecone",
+      "kind": "module",
+      "path": "scripts/verify_pinecone.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "main"
+      ],
+      "external_deps": [
+        "boto3",
+        "pinecone"
+      ]
+    },
+    {
+      "id": "scripts.verify_retrieval",
+      "kind": "module",
+      "path": "scripts/verify_retrieval.py",
+      "owned_by": [],
+      "classes": [],
+      "functions": [
+        "main"
+      ],
+      "external_deps": [
+        "openai",
+        "pinecone"
+      ]
     }
   ],
   "edges": [
@@ -988,8 +1081,53 @@
       "kind": "imports"
     },
     {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ext:openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ingestion.chunker",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ingestion.models",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.backfill_s3_to_pinecone",
+      "to": "ingestion.parser",
+      "kind": "imports"
+    },
+    {
       "from": "scripts.demo",
       "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.preflight",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.preflight",
+      "to": "ext:openai",
       "kind": "depends_on"
     },
     {
@@ -1004,6 +1142,61 @@
     },
     {
       "from": "scripts.setup_pinecone",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.triage_queue",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.triage_queue",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.triage_queue",
+      "to": "ext:botocore",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_end_to_end",
+      "to": "ext:openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_end_to_end",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_pinecone",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.verify_pinecone",
+      "to": "ext:boto3",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_pinecone",
+      "to": "ext:pinecone",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_retrieval",
+      "to": "api.config",
+      "kind": "imports"
+    },
+    {
+      "from": "scripts.verify_retrieval",
+      "to": "ext:openai",
+      "kind": "depends_on"
+    },
+    {
+      "from": "scripts.verify_retrieval",
       "to": "ext:pinecone",
       "kind": "depends_on"
     }

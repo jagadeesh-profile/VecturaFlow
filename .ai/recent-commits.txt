@@ -1,3 +1,5 @@
+5b0c7f8 feat: add .ai/ session layer — two-layer AI memory for Claude/Codex/Copilot
+cdad330 chore: add scripts/pre-commit-hook.sh — protect MEMORY.md + auto-graphify
 62fc653 chore: prepend .ai/ read-order session header to CLAUDE.md
 b479dea chore: add .github/copilot-instructions.md — Copilot session protocol
 3edeb16 chore: update AGENTS.md — two-layer read order (graphify/ + .ai/)

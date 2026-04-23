@@ -43,19 +43,24 @@ def _region() -> str:
 
 @lru_cache(maxsize=1)
 def _openai_client() -> OpenAI:
-    return OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    return OpenAI(api_key=_secret_value("OPENAI_API_KEY"))
 
 
 @lru_cache(maxsize=1)
 def _pinecone_index() -> Any:
     pinecone = importlib.import_module("pinecone")
-    pc = pinecone.Pinecone(api_key=os.environ["PINECONE_API_KEY"])
+    pc = pinecone.Pinecone(api_key=_secret_value("PINECONE_API_KEY"))
     return pc.Index(os.environ["PINECONE_INDEX"])
 
 
 @lru_cache(maxsize=1)
 def _dynamo() -> Any:
     return boto3.resource("dynamodb", region_name=_region())
+
+
+@lru_cache(maxsize=1)
+def _secrets() -> Any:
+    return boto3.client("secretsmanager", region_name=_region())
 
 
 def _registry() -> Any:
@@ -78,6 +83,23 @@ def _embedding_model() -> str:
 
 def _ingestion_bucket() -> str:
     return os.environ.get("INGESTION_BUCKET", "")
+
+
+def _secret_value(name: str) -> str:
+    """Read a secret directly from env, or resolve its Secrets Manager ARN."""
+    value = os.environ.get(name)
+    if value:
+        return value
+
+    arn = os.environ.get(f"{name}_ARN")
+    if not arn:
+        return os.environ[name]
+
+    response = _secrets().get_secret_value(SecretId=arn)
+    secret = response.get("SecretString")
+    if not secret:
+        raise RuntimeError(f"{name} secret has no SecretString")
+    return secret
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
@@ -153,17 +175,44 @@ def _save_failed_chunks_to_s3(doc_id: str, failed: list[dict]) -> None:
         logger.error("embed.saved_failed_chunks", doc_id=doc_id, key=key)
 
 
-def _update_registry(doc_id: str) -> None:
-    """Mark the document as embedded in DynamoDB with an ISO timestamp."""
+def _mark_registry_embedded(doc_id: str, timestamp: str) -> None:
+    """Mark the document as fully embedded in DynamoDB."""
     _registry().update_item(
         Key={"doc_id": doc_id},
-        UpdateExpression="SET #st = :s, embedded_at = :ts",
+        UpdateExpression="SET #st = :s, embedded_at = :ts, updated_at = :ts",
         ExpressionAttributeNames={"#st": "status"},
         ExpressionAttributeValues={
             ":s": "embedded",
-            ":ts": datetime.now(timezone.utc).isoformat(),
+            ":ts": timestamp,
         },
     )
+
+
+def _record_registry_progress(doc_id: str, chunk_ids: set[str], total_chunks: int) -> None:
+    """Record unique embedded chunks and mark complete only after all are seen."""
+    timestamp = datetime.now(timezone.utc).isoformat()
+    response = _registry().update_item(
+        Key={"doc_id": doc_id},
+        UpdateExpression=(
+            "ADD embedded_chunk_ids :chunk_ids "
+            "SET total_chunks = :total, updated_at = :ts"
+        ),
+        ExpressionAttributeValues={
+            ":chunk_ids": chunk_ids,
+            ":total": total_chunks,
+            ":ts": timestamp,
+        },
+        ReturnValues="UPDATED_NEW",
+    )
+    if not isinstance(response, dict):
+        return
+
+    attrs = response.get("Attributes", {})
+    embedded_chunk_ids = attrs.get("embedded_chunk_ids", set())
+    embedded_count = len(embedded_chunk_ids) if embedded_chunk_ids else 0
+    expected_total = int(attrs.get("total_chunks", total_chunks) or total_chunks)
+    if expected_total > 0 and embedded_count >= expected_total:
+        _mark_registry_embedded(doc_id, timestamp)
 
 
 def _emit_metric(latency_ms: float, vector_count: int) -> None:
@@ -274,19 +323,27 @@ def handler(event: dict, context: Any) -> dict:  # noqa: C901
             batch_item_failures.append({"itemIdentifier": record["messageId"]})
         return {"batchItemFailures": batch_item_failures}
 
-    # ── Update DynamoDB — one write per unique doc_id ─────────────────────────
-    seen_doc_ids: set[str] = set()
-    for _record, msg in zip(sqs_records, messages, strict=False):
+    # ── Update DynamoDB — one progress write per unique doc_id ────────────────
+    progress_by_doc: dict[str, dict[str, Any]] = {}
+    for msg in messages:
         doc_id = msg["doc_id"]
-        # Only update once per doc_id in this batch (last chunk wins on timing)
-        if doc_id not in seen_doc_ids:
-            try:
-                _update_registry(doc_id)
-                seen_doc_ids.add(doc_id)
-            except Exception:
-                # DynamoDB failure is non-fatal — vectors are already in Pinecone
-                # Log but don't fail the record; status can be corrected later
-                pass
+        progress = progress_by_doc.setdefault(
+            doc_id,
+            {"chunk_ids": set(), "total_chunks": int(msg.get("total_chunks", 1) or 1)},
+        )
+        progress["chunk_ids"].add(msg["chunk_id"])
+        progress["total_chunks"] = max(
+            int(progress["total_chunks"]),
+            int(msg.get("total_chunks", 1) or 1),
+        )
+
+    for doc_id, progress in progress_by_doc.items():
+        with contextlib.suppress(Exception):
+            _record_registry_progress(
+                doc_id,
+                progress["chunk_ids"],
+                int(progress["total_chunks"]),
+            )
 
     # ── Emit CloudWatch metrics ───────────────────────────────────────────────
     latency_ms = (time.perf_counter() - start) * 1000

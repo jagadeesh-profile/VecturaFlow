@@ -216,6 +216,8 @@ def _matches_to_chunks(matches: list[Any], low_confidence: bool = False) -> list
                 source=meta.get("source", ""),
                 score=float(m.score),
                 chunk_index=int(meta.get("chunk_index", 0)),
+                page=meta.get("page"),
+                section=meta.get("section"),
                 low_confidence=low_confidence,
             )
         )

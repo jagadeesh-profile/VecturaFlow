@@ -26,6 +26,7 @@ except ImportError:
     pass
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from pinecone import Pinecone
 
 from api.config import settings
@@ -36,15 +37,17 @@ def _registry_table() -> Any:
     return dynamo.Table(settings.registry_table)
 
 
-def _safe_scan_embedded(limit: int) -> list[dict[str, Any]]:
+def _safe_query_embedded(limit: int) -> list[dict[str, Any]]:
     table = _registry_table()
-    response = table.scan(
+    response = table.query(
+        IndexName="status-ingested_at-index",
+        KeyConditionExpression=Key("status").eq("embedded"),
         ProjectionExpression="doc_id, #s, chunk_count, #src",
         ExpressionAttributeNames={"#s": "status", "#src": "source"},
+        Limit=limit,
+        ScanIndexForward=False,
     )
-    items = response.get("Items", [])
-    embedded = [item for item in items if item.get("status") == "embedded"]
-    return embedded[:limit]
+    return response.get("Items", [])[:limit]
 
 
 def main() -> int:
@@ -70,7 +73,7 @@ def main() -> int:
             vector_count = getattr(namespace_stats, "vector_count", None)
             print(f"    - {namespace}: {vector_count}")
 
-    embedded_rows = _safe_scan_embedded(args.limit)
+    embedded_rows = _safe_query_embedded(args.limit)
     if not embedded_rows:
         print("\nNo embedded registry rows were found. Nothing to fetch.")
         return 1

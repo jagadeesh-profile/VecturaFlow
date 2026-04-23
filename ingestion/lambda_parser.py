@@ -273,6 +273,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             body = json.loads(record["body"])
             result = _process_record(body)
             results[result["status"]] += 1
+            if result["status"] == "failed":
+                batch_item_failures.append({"itemIdentifier": message_id})
         except Exception as exc:
             logger.error(
                 "parser.record_exception",

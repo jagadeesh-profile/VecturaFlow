@@ -28,6 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Configure AWS creds (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,6 +52,11 @@ jobs:
           else
             echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Build wheelhouse
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel -r requirements.runtime.txt -w wheelhouse/
 
       - name: Build + push image
         env:

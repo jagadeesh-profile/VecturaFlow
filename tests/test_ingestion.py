@@ -411,8 +411,7 @@ def test_lambda_parser_handles_invalid_message():
     }]}
 
     result = lp.handler(event, None)
-    # Should not raise — handled gracefully
-    assert "batchItemFailures" in result
+    assert result["batchItemFailures"] == [{"itemIdentifier": "bad-msg"}]
 
 
 @mock_aws

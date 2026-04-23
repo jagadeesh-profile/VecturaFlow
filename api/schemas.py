@@ -74,6 +74,8 @@ class SourceCitation(BaseModel):
     source: str
     score: float = Field(ge=0.0, le=1.0)
     chunk_index: int = 0
+    page: int | None = None
+    section: str | None = None
 
 
 class UsageMetadata(BaseModel):
@@ -122,6 +124,8 @@ class RetrievedChunk(BaseModel):
     source: str
     score: float
     chunk_index: int = 0
+    page: int | None = None
+    section: str | None = None
     low_confidence: bool = False
 
 

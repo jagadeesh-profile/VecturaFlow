@@ -64,6 +64,7 @@ def _make_pinecone_match(
     text: str = "Some retrieved text.",
     chunk_index: int = 0,
     page: int | None = 1,
+    section: str | None = None,
 ) -> MagicMock:
     match = MagicMock()
     match.id = chunk_id
@@ -76,6 +77,8 @@ def _make_pinecone_match(
     }
     if page is not None:
         match.metadata["page"] = page
+    if section is not None:
+        match.metadata["section"] = section
     return match
 
 
@@ -103,6 +106,8 @@ def _make_retrieved_chunk_dict(
         "source": "report.pdf",
         "score": score,
         "chunk_index": 0,
+        "page": 7,
+        "section": "Findings",
         "low_confidence": low_confidence,
     }
 
@@ -152,6 +157,23 @@ class TestRetrieverCacheHit(unittest.TestCase):
         mock_index.return_value.query.assert_called_once()
         self.assertEqual(len(result), 1)
         self.assertAlmostEqual(result[0].score, 0.88)
+
+    @patch("api.retriever._pinecone_index")
+    @patch("api.retriever._openai_client")
+    @patch("api.retriever._redis_cache")
+    def test_retrieval_preserves_citation_metadata(self, mock_cache, mock_openai, mock_index):
+        """Page and section metadata must survive Pinecone → RetrievedChunk."""
+        mock_cache.return_value.get.return_value = None
+        mock_openai.return_value.embeddings.create.return_value = _make_openai_embed_response()
+
+        match = _make_pinecone_match(score=0.88, page=12, section="Risk Analysis")
+        mock_index.return_value.query.return_value = MagicMock(matches=[match])
+
+        from api.retriever import retrieve
+        result = retrieve("what risks are listed?")
+
+        self.assertEqual(result[0].page, 12)
+        self.assertEqual(result[0].section, "Risk Analysis")
 
     @patch("api.retriever._pinecone_index")
     @patch("api.retriever._openai_client")
@@ -335,6 +357,8 @@ class TestGenerateAnswer(unittest.TestCase):
         self.assertEqual(result["confidence"], "high")
         self.assertEqual(result["answer"], "The answer is 42.")
         self.assertEqual(len(result["sources"]), 1)
+        self.assertEqual(result["sources"][0]["page"], 7)
+        self.assertEqual(result["sources"][0]["section"], "Findings")
 
     @patch("api.agent._llm")
     def test_low_confidence_chunks_yield_low_confidence(self, mock_llm):
