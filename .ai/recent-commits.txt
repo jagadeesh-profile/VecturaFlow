@@ -1,3 +1,4 @@
+71c32fb fix: address project review findings
 5b0c7f8 feat: add .ai/ session layer — two-layer AI memory for Claude/Codex/Copilot
 cdad330 chore: add scripts/pre-commit-hook.sh — protect MEMORY.md + auto-graphify
 62fc653 chore: prepend .ai/ read-order session header to CLAUDE.md

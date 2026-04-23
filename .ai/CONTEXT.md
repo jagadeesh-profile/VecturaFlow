@@ -1,16 +1,18 @@
 # Live Context (overwritten at every session end)
 
 ## Current Task
-Fix project review findings
+Continue after review-fix commit
 
 ## State
-- Phase: complete, pending git commit only
+- Phase: complete, committed on main
 - Files recently touched: api/schemas.py, api/retriever.py, api/agent.py,
   ingestion/lambda_parser.py, embeddings/lambda_embed.py, infra/terraform/main.tf,
   .github/workflows/deploy.yml, pyproject.toml, pytest.ini,
   scripts/verify_pinecone.py, tests/test_*.py, graphify/*
-- Last command run: rg -n "\.scan\(|dynamodb:Scan|setuptools\.backends|would change|OPENAI_API_KEY_ARN|PINECONE_API_KEY_ARN" api ingestion embeddings scripts infra .github pyproject.toml pytest.ini tests graphify/modules
+- Commit: 71c32fb fix: address project review findings
+- Last command run: uv run --python 3.11 --with-requirements requirements.txt --with pytest-cov python -m pytest tests/ --tb=short
 - Verification:
+  - Fresh continue-session verification: `uv run --python 3.11 --with-requirements requirements.txt --with pytest-cov python -m pytest tests/ --tb=short` -> 115 passed, 82.66% coverage, 1 dependency warning
   - `python -m ruff check api ingestion embeddings` -> pass
   - `terraform fmt -check -recursive infra/terraform` -> pass
   - `terraform validate` from `infra/terraform` -> pass
@@ -26,7 +28,7 @@ Fix project review findings
 - Deploy workflow now builds the Docker wheelhouse before `docker build`; Terraform SQS visibility timeouts are 360s.
 
 ## Next Action
-Run `git add` and commit once repository index permissions allow it.
+User chooses whether to push main, keep local, or start the next hardening task.
 
 ## Do Not
 - Do not edit .ai/MEMORY.md.
