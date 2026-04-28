@@ -7,7 +7,7 @@
       "id": "agent:ChunkingAgent",
       "kind": "agent",
       "name": "ChunkingAgent",
-      "brief": ".claude/agents/chunking-agent.md",
+      "brief": null,
       "owns": [
         "ingestion/chunker.py",
         "ingestion/models.py"
@@ -17,7 +17,7 @@
       "id": "agent:DemoAgent",
       "kind": "agent",
       "name": "DemoAgent",
-      "brief": ".claude/agents/demo-agent.md",
+      "brief": null,
       "owns": [
         "scripts/demo.py"
       ]
@@ -26,7 +26,7 @@
       "id": "agent:EmbeddingAgent",
       "kind": "agent",
       "name": "EmbeddingAgent",
-      "brief": ".claude/agents/embedding-agent.md",
+      "brief": null,
       "owns": [
         "embeddings/lambda_embed.py"
       ]
@@ -35,7 +35,7 @@
       "id": "agent:FileIngestionAgent",
       "kind": "agent",
       "name": "FileIngestionAgent",
-      "brief": ".claude/agents/file-ingestion-agent.md",
+      "brief": null,
       "owns": [
         "ingestion/lambda_s3.py"
       ]
@@ -44,14 +44,14 @@
       "id": "agent:InfraDeployAgent",
       "kind": "agent",
       "name": "InfraDeployAgent",
-      "brief": ".claude/agents/infra-deploy-agent.md",
+      "brief": null,
       "owns": []
     },
     {
       "id": "agent:ParserAgent",
       "kind": "agent",
       "name": "ParserAgent",
-      "brief": ".claude/agents/parser-agent.md",
+      "brief": null,
       "owns": [
         "ingestion/parser.py"
       ]
@@ -60,7 +60,7 @@
       "id": "agent:QueryHandlerAgent",
       "kind": "agent",
       "name": "QueryHandlerAgent",
-      "brief": ".claude/agents/query-handler-agent.md",
+      "brief": null,
       "owns": [
         "api/dependencies.py",
         "api/main.py",
@@ -72,7 +72,7 @@
       "id": "agent:RAGAgent",
       "kind": "agent",
       "name": "RAGAgent",
-      "brief": ".claude/agents/r-a-g-agent.md",
+      "brief": null,
       "owns": [
         "api/agent.py"
       ]
@@ -81,7 +81,7 @@
       "id": "agent:RetrieverAgent",
       "kind": "agent",
       "name": "RetrieverAgent",
-      "brief": ".claude/agents/retriever-agent.md",
+      "brief": null,
       "owns": [
         "api/retriever.py"
       ]
@@ -90,14 +90,14 @@
       "id": "agent:TestAgent",
       "kind": "agent",
       "name": "TestAgent",
-      "brief": ".claude/agents/test-agent.md",
+      "brief": null,
       "owns": []
     },
     {
       "id": "agent:WebhookIngestionAgent",
       "kind": "agent",
       "name": "WebhookIngestionAgent",
-      "brief": ".claude/agents/webhook-ingestion-agent.md",
+      "brief": null,
       "owns": [
         "ingestion/lambda_webhook.py"
       ]

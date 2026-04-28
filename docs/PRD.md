@@ -519,7 +519,7 @@ Attributes:
 
 ## 11. Agent System Design
 
-VecturaFlow uses a Claude Code agent architecture — each agent is a `.md` file in `.claude/agents/` with a focused responsibility.
+VecturaFlow is organized around focused service responsibilities for ingestion, parsing, chunking, embedding, retrieval, query handling, infrastructure, testing, and demo workflows.
 
 | Agent | File | Trigger | Outputs |
 |---|---|---|---|

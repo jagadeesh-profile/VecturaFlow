@@ -90,9 +90,9 @@ context. UNGROUNDED → downgrade confidence to `low`.
 
 ## Things the project calls differently than the outside world
 
-- **"Agent"** here means a focused module with its own brief in
-  `.claude/agents/`. It does **not** mean a LangGraph agent unless we say
-  "RAGAgent" specifically.
+- **"Agent"** here usually means a focused runtime responsibility in the
+  platform. It means a LangGraph agent only when the text says "RAGAgent"
+  specifically.
 - **"Confidence"** is not a calibrated probability — it's a three-valued
   enum (see above).
 - **"Registry"** = DynamoDB `vecturaflow-registry`, not a pip/npm registry.

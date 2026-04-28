@@ -24,19 +24,6 @@ crash.*.log
 !*.example.tfvars
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Claude Code / agent tooling — the worktree dir lives here and belongs to a
-# separate repo (home-level HF Marketing). Excluding prevents cross-repo noise.
-# ─────────────────────────────────────────────────────────────────────────────
-.claude/
-.agent/
-.agents/
-.antigravity/
-.cagent/
-.codeium/
-.copilot/
-.continuum/
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Python
 # ─────────────────────────────────────────────────────────────────────────────
 __pycache__/

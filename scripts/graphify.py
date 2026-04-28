@@ -5,7 +5,7 @@ Walks the live source tree and refreshes:
   graphify/modules/*.md   — one markdown card per source file
   graphify/graph.json     — machine-readable node + edge manifest
 
-The hand-written memory files (INDEX.md, architecture.md, agents.md,
+The hand-written project map files (INDEX.md, architecture.md,
 dataflow.md, glossary.md, decisions.md) are NEVER touched by this script.
 Those encode intent and are edited by humans.
 
@@ -75,8 +75,8 @@ KNOWN_RESOURCES = [
      "name": "gpt-4o-mini", "notes": "temperature=0."},
 ]
 
-# Hand-curated agent-to-module ownership (lives in graphify/agents.md for humans;
-# duplicated here so graph.json carries the edge set)
+# Hand-curated runtime responsibility map; duplicated here so graph.json carries
+# the edge set.
 AGENT_OWNERSHIP = {
     "FileIngestionAgent":    ["ingestion/lambda_s3.py"],
     "ParserAgent":           ["ingestion/parser.py"],
@@ -263,7 +263,7 @@ def build_graph(modules: list[ModuleInfo]) -> dict[str, Any]:
             "id": f"agent:{agent}",
             "kind": "agent",
             "name": agent,
-            "brief": f".claude/agents/{_agent_brief_name(agent)}.md",
+            "brief": None,
             "owns": sorted(AGENT_OWNERSHIP[agent]),
         })
 
@@ -320,15 +320,6 @@ def build_graph(modules: list[ModuleInfo]) -> dict[str, Any]:
         "nodes": nodes,
         "edges": edges,
     }
-
-
-def _agent_brief_name(agent: str) -> str:
-    """RAGAgent → rag-agent"""
-    # "FileIngestionAgent" → "file-ingestion-agent"
-    import re
-    # split before each uppercase letter (not the first), then lowercase + join with -
-    parts = re.findall(r"[A-Z][a-z0-9]*", agent)
-    return "-".join(p.lower() for p in parts) if parts else agent.lower()
 
 
 # ─── Writer ──────────────────────────────────────────────────────────────────

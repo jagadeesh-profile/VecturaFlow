@@ -340,7 +340,7 @@ VecturaFlow/
 
 ## Design decisions worth reading
 
-Each of these has a one-page ADR in `.claude/memory/architecture.md`:
+Key architecture choices:
 
 - **Why LangGraph over LCEL** — explicit state you can inspect and test; chains hide too much.
 - **Why chunk per `TextBlock` (not per document)** — losing page/section metadata kills citations.
@@ -348,8 +348,8 @@ Each of these has a one-page ADR in `.claude/memory/architecture.md`:
 - **Why lazy `@lru_cache` clients** — unit tests must import the module with dummy creds.
 - **Why partial-batch SQS responses** — one poison-pill message shouldn't fail 9 healthy ones.
 - **Why DynamoDB with a GSI on `status`** — `Scan()` is a sin in production.
-- **Why an in-process limiter (for now)** — ElastiCache-backed exact limits are a follow-up,
-  documented as a known-limitation in `CLAUDE.md`.
+- **Why an in-process limiter (for now)** — ElastiCache-backed exact limits are a planned
+  follow-up once cross-task rate accuracy matters.
 
 ---
 
